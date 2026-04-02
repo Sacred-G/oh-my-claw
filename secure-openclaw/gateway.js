@@ -9,7 +9,7 @@ import SignalAdapter from './adapters/signal.js'
 import SessionManager from './sessions/manager.js'
 import AgentRunner from './agent/runner.js'
 import CommandHandler from './commands/handler.js'
-import { Composio } from '@composio/core'
+import { Composio } from '@composio/client'
 
 /**
  * Secure OpenClaw Gateway - Routes messages between messaging platforms and Claude agent
@@ -27,7 +27,9 @@ class Gateway {
     this.commandHandler = new CommandHandler(this)
     this.adapters = new Map()
     this.pendingApprovals = new Map() // chatId -> { resolve, timeout }
-    this.composio = new Composio()
+    this.composio = new Composio({
+      apiKey: process.env.COMPOSIO_API_KEY
+    })
     this.composioSession = null
     this.mcpServers = {}
     this.sseClients = new Set()
@@ -40,7 +42,9 @@ class Gateway {
     const userId = config.agentId || 'secure-openclaw-user'
     console.log('[Composio] Initializing session for:', userId)
     try {
-      this.composioSession = await this.composio.create(userId)
+      this.composioSession = await this.composio.toolRouter.session.create({
+        user_id: userId
+      })
       this.mcpServers.composio = {
         type: 'http',
         url: this.composioSession.mcp.url,
@@ -49,6 +53,7 @@ class Gateway {
       console.log('[Composio] Session ready')
     } catch (err) {
       console.error('[Composio] Failed to initialize:', err.message)
+      console.error('[Composio] Error details:', err)
     }
 
   }
@@ -551,15 +556,10 @@ class Gateway {
 
       // Integrations API - List Connected Apps
       if (req.url === '/integrations') {
-        if (!this.composioSession) {
-          res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify([]))
-          return
-        }
         try {
-          const apps = await this.composioSession.getConnectedApps()
+          const response = await this.composio.connectedAccounts.list()
           res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify(apps))
+          res.end(JSON.stringify(response.items || []))
         } catch (err) {
           console.error('[Composio] Failed to fetch connected apps:', err.message)
           res.writeHead(500, { 'Content-Type': 'application/json' })
@@ -568,22 +568,79 @@ class Gateway {
         return
       }
 
+      // Integrations API - List All Available Toolkits
+      if (req.url === '/integrations/available') {
+        try {
+          console.log('[Composio] Fetching available toolkits...')
+          
+          // Add timeout wrapper to prevent hanging
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Composio API timeout after 10s')), 10000)
+          })
+          
+          const fetchPromise = this.composio.toolkits.list({ 
+            limit: 1000,
+            managed_by: 'composio',
+            sort_by: 'alphabetically'
+          })
+          
+          const response = await Promise.race([fetchPromise, timeoutPromise])
+          console.log('[Composio] Fetched', response.items?.length || 0, 'toolkits')
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(response.items || []))
+        } catch (err) {
+          console.error('[Composio] Failed to fetch available toolkits:', err.message)
+          console.error('[Composio] Error details:', err)
+          res.writeHead(500, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Failed to fetch available toolkits', details: err.message }))
+        }
+        return
+      }
+
       // Integrations API - Connect New App (Redirect URL)
       if (req.url.startsWith('/integrations/connect/')) {
         const appName = req.url.split('/').pop()
+        console.log(`[Composio] Initiating connection for: ${appName}`)
+        
         if (!this.composioSession) {
+          console.error('[Composio] Session not initialized')
           res.writeHead(500, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Composio session not initialized' }))
           return
         }
+        
         try {
-          const connection = await this.composioSession.initiateAppConnection(appName)
+          console.log(`[Composio] Calling link for: ${appName}`)
+          const sessionId = this.composioSession.session_id
+          console.log(`[Composio] Using session ID: ${sessionId}`)
+          const connection = await this.composio.toolRouter.session.link(sessionId, {
+            toolkit: appName
+          })
+          console.log(`[Composio] Connection response:`, JSON.stringify(connection, null, 2))
+          
+          // Extract redirect URL from response
+          const redirectUrl = connection.redirectUrl || connection.redirect_url || connection.url
+          console.log(`[Composio] Redirect URL:`, redirectUrl)
+          
           res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ redirectUrl: connection.redirectUrl }))
+          res.end(JSON.stringify({ redirectUrl }))
         } catch (err) {
           console.error(`[Composio] Failed to initiate connection for ${appName}:`, err.message)
+          
+          // Handle no-auth toolkits
+          if (err.message && err.message.includes('does not require authentication')) {
+            console.log(`[Composio] ${appName} does not require authentication - already available`)
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ 
+              message: `${appName} does not require authentication and is already available`,
+              noAuthRequired: true 
+            }))
+            return
+          }
+          
+          console.error(`[Composio] Error details:`, err)
           res.writeHead(500, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: `Failed to initiate connection for ${appName}` }))
+          res.end(JSON.stringify({ error: `Failed to initiate connection for ${appName}`, details: err.message }))
         }
         return
       }

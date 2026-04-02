@@ -14,20 +14,34 @@ export async function GET(
   const { appName } = await params
 
   try {
-    const response = await fetch(`${env.GATEWAY_URL}/integrations/connect/${appName}`, {
+    const gatewayUrl = `${env.GATEWAY_URL}/integrations/connect/${appName}`
+    console.log(`[API] Connecting to gateway:`, gatewayUrl)
+    
+    const response = await fetch(gatewayUrl, {
       cache: 'no-store'
     })
 
+    console.log(`[API] Gateway response status:`, response.status)
+    console.log(`[API] Gateway response headers:`, response.headers)
+
     if (!response.ok) {
-      throw new Error(`Gateway returned ${response.status}`)
+      try {
+        const errorText = await response.text()
+        console.error(`[API] Gateway error response:`, errorText)
+        throw new Error(`Gateway returned ${response.status}: ${errorText}`)
+      } catch (error) {
+        console.error(`[API] Failed to read gateway error response:`, error)
+        throw new Error(`Gateway returned ${response.status}`)
+      }
     }
 
     const data = await response.json()
+    console.log(`[API] Gateway response data:`, data)
     return NextResponse.json(data)
   } catch (error) {
-    console.error(`Failed to initiate connection for ${appName}:`, error)
+    console.error(`[API] Failed to initiate connection for ${appName}:`, error)
     return NextResponse.json(
-      { error: "Gateway unreachable" },
+      { error: "Gateway unreachable", details: String(error) },
       { status: 503 }
     )
   }
