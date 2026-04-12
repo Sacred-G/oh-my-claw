@@ -11,10 +11,10 @@ export default {
   },
 
   imessage: {
-    enabled: false,
+    enabled: true,
     allowedDMs: parseList(process.env.IMESSAGE_ALLOWED_DMS),       // chat IDs, or '*' for all
     allowedGroups: parseList(process.env.IMESSAGE_ALLOWED_GROUPS),
-    respondToMentionsOnly: true
+    respondToMentionsOnly: false
   },
 
   telegram: {

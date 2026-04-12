@@ -138,6 +138,20 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+# NextAuth
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Personal Memory
+MEMORY.md
+memory/
+
+# Local MCP config
+mcp-servers.json
+
 # Vite files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

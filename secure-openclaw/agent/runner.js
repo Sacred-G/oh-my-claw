@@ -1,5 +1,11 @@
 import { EventEmitter } from 'events'
+import fs from 'fs'
+import path from 'path'
+import os from 'os'
+import { execSync } from 'child_process'
 import ClaudeAgent from './claude-agent.js'
+import McpBridge from './mcp-bridge.js'
+import { buildSystemPrompt } from './prompt-builder.js'
 
 /**
  * Agent run coordinator with task queue
@@ -17,6 +23,10 @@ export default class AgentRunner extends EventEmitter {
       totalProcessed: 0,
       totalFailed: 0
     }
+
+    // MCP Bridge for OpenAI fallback (initialized lazily)
+    this.mcpBridge = null
+    this.mcpBridgeInitializing = false
 
     // Forward agent events
     this.agent.on('run:start', (data) => this.emit('agent:start', data))
@@ -320,6 +330,189 @@ export default class AgentRunner extends EventEmitter {
       return fullText
     } catch (error) {
       console.error(`Agent run failed for ${sessionKey}:`, error)
+      
+      // Try OpenAI fallback if Claude fails (any error)
+      if (process.env.OPENAI_API_KEY) {
+        console.log(`[Fallback] Claude failed: ${error.message}. Retrying with OpenAI (${process.env.OPENAI_FALLBACK_MODEL || 'gpt-5.2'})...`)
+        try {
+          const fallbackResponse = await this.executeWithOpenAI(message, sessionKey, adapter, chatId)
+          
+          // Record fallback response in transcript
+          this.sessionManager.appendTranscript(sessionKey, {
+            role: 'assistant',
+            content: fallbackResponse
+          })
+          
+          return fallbackResponse
+        } catch (fallbackError) {
+          console.error(`[Fallback] OpenAI also failed:`, fallbackError)
+          throw error // Throw original error
+        }
+      }
+      
+      throw error
+    }
+  }
+
+  /**
+   * Initialize or get the MCP Bridge for OpenAI fallback
+   * Lazily initialized on first fallback use
+   */
+  async ensureMcpBridge(context = {}) {
+    if (this.mcpBridge?.initialized) {
+      this.mcpBridge.updateContext(context)
+      return this.mcpBridge
+    }
+
+    if (this.mcpBridgeInitializing) {
+      // Wait for existing initialization
+      while (this.mcpBridgeInitializing) {
+        await new Promise(r => setTimeout(r, 100))
+      }
+      if (this.mcpBridge?.initialized) {
+        this.mcpBridge.updateContext(context)
+        return this.mcpBridge
+      }
+    }
+
+    this.mcpBridgeInitializing = true
+    console.log('[Fallback] Initializing MCP Bridge for OpenAI...')
+
+    try {
+      this.mcpBridge = new McpBridge()
+
+      // Load external MCP servers from mcp-servers.json
+      let externalMcpServers = {}
+      const mcpConfigPath = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'mcp-servers.json')
+      try {
+        if (fs.existsSync(mcpConfigPath)) {
+          externalMcpServers = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'))
+        }
+      } catch (e) {
+        console.error('[Fallback] Failed to load mcp-servers.json:', e.message)
+      }
+
+      await this.mcpBridge.initialize(this.mcpServers || {}, externalMcpServers, context)
+      return this.mcpBridge
+    } catch (err) {
+      console.error('[Fallback] MCP Bridge initialization failed:', err.message)
+      // Create a minimal bridge with just file tools
+      this.mcpBridge = new McpBridge()
+      this.mcpBridge.registerFileTools()
+      this.mcpBridge.initialized = true
+      return this.mcpBridge
+    } finally {
+      this.mcpBridgeInitializing = false
+    }
+  }
+
+  /**
+   * Execute with OpenAI as fallback - with full MCP Bridge tool access, vision, and streaming
+   */
+  async executeWithOpenAI(message, sessionKey, adapter, chatId, image = null) {
+    const { OpenAIProvider } = await import('../providers/openai-provider.js')
+    const workspace = path.join(os.homedir(), 'secure-openclaw')
+    const platform = this.extractPlatform(sessionKey)
+
+    // Initialize MCP Bridge with full context
+    const bridge = await this.ensureMcpBridge({
+      gateway: this.agent.gateway,
+      platform,
+      chatId,
+      sessionKey
+    })
+
+    const provider = new OpenAIProvider({
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_FALLBACK_MODEL || 'gpt-4o'
+    })
+
+    console.log(`[Fallback] OpenAI (${provider.defaultModel}) with ${bridge.tools.size} tools via MCP Bridge`)
+
+    // Build system prompt using shared utility
+    const memoryContext = this.agent.memoryManager.getMemoryContext()
+    const cronInfo = this.agent.getCronSummary()
+    const systemPrompt = buildSystemPrompt({
+      memoryContext,
+      sessionInfo: { sessionKey, platform },
+      cronInfo,
+      providerName: 'openai',
+      workspace,
+      toolCount: bridge.tools.size
+    })
+
+    // Get conversation history
+    const history = this.sessionManager.getTranscript(sessionKey) || []
+    const messages = [
+      ...history.slice(-20).map(msg => ({ role: msg.role, content: msg.content }))
+    ]
+
+    // Current prompt
+    let currentPrompt = message
+    if (image) {
+      currentPrompt = [
+        { type: 'text', text: message },
+        {
+          type: 'image_url',
+          image_url: { url: `data:${image.mediaType};base64,${image.data}` }
+        }
+      ]
+    }
+
+    let fullText = ''
+    const canUseTool = this.createMessagingCanUseTool(adapter, chatId)
+
+    try {
+      for await (const chunk of provider.query({
+        prompt: [{ role: 'user', content: currentPrompt }],
+        chatId: sessionKey,
+        systemPrompt,
+        messages, // Pass history
+        bridge,
+        canUseTool,
+        maxTurns: 15
+      })) {
+        if (chunk.type === 'stream_event' && chunk.event) {
+          const event = chunk.event
+          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+            const text = event.delta.text
+            fullText += text
+            this.emit('agent:text', { sessionKey, content: text })
+            
+            // Send text delta if it was just text (no tool call yet)
+            // Note: OpenAIProvider.query handles the tool calls and yields results
+          }
+        }
+
+        if (chunk.type === 'text') {
+          fullText += chunk.content
+          this.emit('agent:text', { sessionKey, content: chunk.content })
+        }
+
+        if (chunk.type === 'tool_use') {
+          this.emit('agent:tool', { sessionKey, name: chunk.name })
+          // If we have text to send before the tool call
+          if (fullText.trim() && adapter) {
+            // This is a bit tricky since we are streaming. 
+            // The provider.query implementation in openai-provider.js doesn't yield text deltas yet for all cases.
+          }
+        }
+      }
+
+      // Since the provider doesn't handle the messaging adapter directly, 
+      // we need to send the final accumulated text if not already sent.
+      // But wait, the previous executeWithOpenAI sent deltas.
+      // Let's adjust OpenAIProvider to be more helpful or handle deltas here.
+      
+      if (fullText.trim() && adapter) {
+        await adapter.sendMessage(chatId, fullText.trim())
+      }
+
+      this.emit('agent:complete', { sessionKey, response: fullText })
+      return fullText
+
+    } catch (error) {
+      console.error(`[Fallback] OpenAI query failed:`, error)
       throw error
     }
   }

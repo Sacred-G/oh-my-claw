@@ -1,10 +1,12 @@
 import { ClaudeProvider } from './claude-provider.js';
 import { OpencodeProvider } from './opencode-provider.js';
+import { OpenAIProvider } from './openai-provider.js';
 
 // Provider registry
 const providers = {
   claude: ClaudeProvider,
-  opencode: OpencodeProvider
+  opencode: OpencodeProvider,
+  openai: OpenAIProvider
 };
 
 // Provider instance cache
@@ -61,4 +63,5 @@ export async function clearProviderCache() {
 
 export { ClaudeProvider } from './claude-provider.js';
 export { OpencodeProvider } from './opencode-provider.js';
+export { OpenAIProvider } from './openai-provider.js';
 export { BaseProvider } from './base-provider.js';

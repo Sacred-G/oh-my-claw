@@ -1,4 +1,7 @@
 import 'dotenv/config'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import http from 'http'
 import QRCode from 'qrcode'
 import config from './config.js'
@@ -39,6 +42,27 @@ class Gateway {
   }
 
   async initMcpServers() {
+    // Load external MCP servers from mcp-servers.json
+    const __dirname = path.dirname(fileURLToPath(import.meta.url))
+    const mcpConfigPath = path.join(__dirname, 'mcp-servers.json')
+    
+    try {
+      if (fs.existsSync(mcpConfigPath)) {
+        const mcpConfig = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'))
+        let loaded = 0
+        for (const [name, serverConfig] of Object.entries(mcpConfig)) {
+          this.mcpServers[name] = serverConfig
+          loaded++
+        }
+        console.log(`[MCP] Loaded ${loaded} external server(s): ${Object.keys(mcpConfig).join(', ')}`)
+      } else {
+        console.log('[MCP] No mcp-servers.json found, skipping external servers')
+      }
+    } catch (err) {
+      console.error('[MCP] Failed to load mcp-servers.json:', err.message)
+    }
+
+    // Initialize Composio session
     const userId = config.agentId || 'secure-openclaw-user'
     console.log('[Composio] Initializing session for:', userId)
     try {
@@ -56,6 +80,7 @@ class Gateway {
       console.error('[Composio] Error details:', err)
     }
 
+    console.log(`[MCP] Total servers available: ${Object.keys(this.mcpServers).join(', ')}`)
   }
 
   setupQueueMonitoring() {
