@@ -25,6 +25,7 @@ export default class ClaudeAgent extends EventEmitter {
     this.abortControllers = new Map()
 
     // Provider setup
+    this.workspace = config.workspace || process.cwd()
     this.providerName = config.provider || 'claude'
     const providerConfig = {
       allowedTools: config.allowedTools,
@@ -38,7 +39,7 @@ export default class ClaudeAgent extends EventEmitter {
 
     this.allowedTools = config.allowedTools || [
       'Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep',
-      'TodoWrite', 'Skill', 'AskUserQuestion'
+      'TodoWrite', 'Skill', 'AskUserQuestion', 'read_pdf'
     ]
 
     // Add cron MCP tools to allowed list
@@ -57,7 +58,10 @@ export default class ClaudeAgent extends EventEmitter {
       'mcp__gateway__get_queue_status',
       'mcp__gateway__get_current_context',
       'mcp__gateway__list_sessions',
-      'mcp__gateway__broadcast_message'
+      'mcp__gateway__broadcast_message',
+      'mcp__gateway__send_image',
+      'mcp__gateway__send_document',
+      'mcp__gateway__generate_image'
     ]
 
     // AppleScript tools (macOS only)
@@ -226,6 +230,7 @@ export default class ClaudeAgent extends EventEmitter {
       sessionInfo: { sessionKey, platform },
       cronInfo,
       providerName: this.providerName,
+      workspace: this.workspace,
       toolCount: allAllowedTools.length
     })
 

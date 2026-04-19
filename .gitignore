@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Node
+node_modules/
+*.log
+npm-debug.log*
+
+# Runtime / local state
+secure-openclaw/uploads/
+secure-openclaw/auth_whatsapp/
+secure-openclaw/transcripts/*.jsonl
+secure-openclaw/memory/
+secure-openclaw/.secure-openclaw/
+
+# Scratch / experimental
+secure-openclaw/test.cjs
+secure-openclaw/test_pdf*.js
+secure-openclaw/test_pdf*.ts
+
+# Env
+.env
+.env.local
+.env.*.local

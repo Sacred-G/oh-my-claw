@@ -388,7 +388,75 @@ export default class McpBridge extends EventEmitter {
       }
     })
 
-    console.log('[McpBridge] Registered 6 gateway tools')
+    this.registerTool('mcp__gateway__send_image', {
+      source: 'local:gateway',
+      schema: {
+        name: 'mcp__gateway__send_image',
+        description: 'Send an image file to the current chat or a specific chat. Use this to share generated images, screenshots, renders, etc. with the user.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_path: { type: 'string', description: 'Absolute path to the image file to send' },
+            caption: { type: 'string', description: 'Optional caption for the image' },
+            platform: { type: 'string', enum: ['whatsapp', 'imessage', 'telegram', 'signal'], description: 'Platform to send on (defaults to current)' },
+            chat_id: { type: 'string', description: 'Chat ID to send to (defaults to current)' }
+          },
+          required: ['file_path']
+        }
+      },
+      handler: async (args) => {
+        const ctx = getGatewayContext()
+        const { gateway } = ctx
+        if (!gateway) return { success: false, error: 'Gateway not available' }
+        const platform = args.platform || ctx.currentPlatform
+        const chatId = args.chat_id || ctx.currentChatId
+        const adapter = gateway.adapters.get(platform)
+        if (!adapter) return { success: false, error: `Platform ${platform} not connected` }
+        if (!adapter.sendImage) return { success: false, error: `Platform ${platform} does not support sending images` }
+        try {
+          await adapter.sendImage(chatId, args.file_path, args.caption || '')
+          return { success: true, platform, chat_id: chatId, file: args.file_path }
+        } catch (err) {
+          return { success: false, error: err.message }
+        }
+      }
+    })
+
+    this.registerTool('mcp__gateway__send_document', {
+      source: 'local:gateway',
+      schema: {
+        name: 'mcp__gateway__send_document',
+        description: 'Send a document/file to the current chat or a specific chat. Use this to share generated files, PDFs, spreadsheets, etc. with the user.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_path: { type: 'string', description: 'Absolute path to the file to send' },
+            caption: { type: 'string', description: 'Optional caption for the document' },
+            platform: { type: 'string', enum: ['whatsapp', 'imessage', 'telegram', 'signal'], description: 'Platform to send on (defaults to current)' },
+            chat_id: { type: 'string', description: 'Chat ID to send to (defaults to current)' }
+          },
+          required: ['file_path']
+        }
+      },
+      handler: async (args) => {
+        const ctx = getGatewayContext()
+        const { gateway } = ctx
+        if (!gateway) return { success: false, error: 'Gateway not available' }
+        const platform = args.platform || ctx.currentPlatform
+        const chatId = args.chat_id || ctx.currentChatId
+        const adapter = gateway.adapters.get(platform)
+        if (!adapter) return { success: false, error: `Platform ${platform} not connected` }
+        if (!adapter.sendDocument) return { success: false, error: `Platform ${platform} does not support sending documents` }
+        try {
+          await adapter.sendDocument(chatId, args.file_path, args.caption || '')
+          return { success: true, platform, chat_id: chatId, file: args.file_path }
+        } catch (err) {
+          return { success: false, error: err.message }
+        }
+      }
+    })
+
+    console.log('[McpBridge] Registered 8 gateway tools')
   }
 
   registerAppleScriptTools() {
@@ -557,6 +625,33 @@ export default class McpBridge extends EventEmitter {
 
   registerFileTools() {
     const workspace = path.join(os.homedir(), 'secure-openclaw')
+
+    this.registerTool('read_pdf', {
+      source: 'local:builtin',
+      schema: {
+        name: 'read_pdf',
+        description: 'Read the text content of a PDF file.',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Path to the PDF file to read' }
+          },
+          required: ['path']
+        }
+      },
+      handler: async (args) => {
+        const filePath = path.isAbsolute(args.path) ? args.path : path.join(workspace, args.path)
+        if (!fs.existsSync(filePath)) return `Error: File not found: ${filePath}`
+        
+        try {
+          // Attempt to use pdftotext if available
+          const output = execSync(`pdftotext "${filePath}" -`, { encoding: 'utf-8', timeout: 30000 })
+          return output.substring(0, 30000) || '(no text found in PDF)'
+        } catch (err) {
+          return `Error reading PDF: ${err.message}. Make sure poppler-utils (pdftotext) is installed.`
+        }
+      }
+    })
 
     this.registerTool('bash', {
       source: 'local:builtin',

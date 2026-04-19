@@ -7,15 +7,19 @@ import makeWASocket, {
 import qrcode from 'qrcode-terminal'
 import pino from 'pino'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import BaseAdapter from './base.js'
+import { transcribeAudio } from '../tools/transcribe.js'
+import { formatForWhatsApp } from '../tools/formatter.js'
+import { saveUpload, UPLOAD_LIMITS } from '../tools/uploads.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const AUTH_DIR = path.join(__dirname, '..', 'auth_whatsapp')
 
 /**
  * WhatsApp adapter using Baileys
- * Supports text and image messages
+ * Supports text, image, and document messages
  */
 export default class WhatsAppAdapter extends BaseAdapter {
   constructor(config) {
@@ -35,6 +39,8 @@ export default class WhatsAppAdapter extends BaseAdapter {
       if (entry.includes('@')) return entry
       return `${entry}@s.whatsapp.net`
     })
+
+    // Uploads directory is managed by tools/uploads.js
   }
 
   async start() {
@@ -150,14 +156,67 @@ export default class WhatsAppAdapter extends BaseAdapter {
       throw new Error('WhatsApp not connected')
     }
 
+    // Format markdown for WhatsApp
+    const formatted = formatForWhatsApp(text)
+
     const targetJid = this.jidMap?.get(chatId) || chatId
-    const sentMsg = await this.sock.sendMessage(targetJid, { text })
+    const sentMsg = await this.sock.sendMessage(targetJid, { text: formatted })
 
     // Track sent message ID so we can filter out our own echoes in self-DMs
     if (sentMsg?.key?.id) {
       this.sentMessageIds.add(sentMsg.key.id)
       setTimeout(() => this.sentMessageIds.delete(sentMsg.key.id), 10000)
     }
+  }
+
+  /**
+   * Send an image to a chat
+   * @param {string} chatId - Chat JID
+   * @param {string} imagePath - Absolute path to the image file
+   * @param {string} caption - Optional caption
+   */
+  async sendImage(chatId, imagePath, caption = '') {
+    if (!this.sock) throw new Error('WhatsApp not connected')
+    if (!fs.existsSync(imagePath)) {
+      throw new Error(`Image file not found: ${imagePath}`)
+    }
+    const targetJid = this.jidMap?.get(chatId) || chatId
+    const imageBuffer = fs.readFileSync(imagePath)
+    const sentMsg = await this.sock.sendMessage(targetJid, {
+      image: imageBuffer,
+      caption: caption || undefined
+    })
+    if (sentMsg?.key?.id) {
+      this.sentMessageIds.add(sentMsg.key.id)
+      setTimeout(() => this.sentMessageIds.delete(sentMsg.key.id), 10000)
+    }
+    console.log(`[WhatsApp] Sent image: ${path.basename(imagePath)}`)
+  }
+
+  /**
+   * Send a document/file to a chat
+   * @param {string} chatId - Chat JID
+   * @param {string} filePath - Absolute path to the file
+   * @param {string} caption - Optional caption
+   */
+  async sendDocument(chatId, filePath, caption = '') {
+    if (!this.sock) throw new Error('WhatsApp not connected')
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`)
+    }
+    const targetJid = this.jidMap?.get(chatId) || chatId
+    const fileBuffer = fs.readFileSync(filePath)
+    const fileName = path.basename(filePath)
+    const sentMsg = await this.sock.sendMessage(targetJid, {
+      document: fileBuffer,
+      fileName,
+      caption: caption || undefined
+    })
+    if (sentMsg?.key?.id) {
+      this.sentMessageIds.add(sentMsg.key.id)
+      setTimeout(() => this.sentMessageIds.delete(sentMsg.key.id), 10000)
+    }
+    console.log(`[WhatsApp] Sent document: ${fileName}`)
   }
 
   async sendTyping(chatId) {
@@ -190,9 +249,9 @@ export default class WhatsAppAdapter extends BaseAdapter {
   }
 
   /**
-   * Download image from message
+   * Download media from message
    */
-  async downloadImage(msg) {
+  async downloadMedia(msg) {
     try {
       const buffer = await downloadMediaMessage(
         msg,
@@ -205,14 +264,21 @@ export default class WhatsAppAdapter extends BaseAdapter {
       )
       return buffer
     } catch (err) {
-      console.error('[WhatsApp] Failed to download image:', err.message)
+      console.error('[WhatsApp] Failed to download media:', err.message)
       return null
     }
   }
 
   /**
-   * At connection time, resolve allowlisted phone numbers to their LIDs
-   * so we can match incoming LID-based messages against the phone allowlist.
+   * Download image from message
+   */
+  async downloadImage(msg) {
+    return this.downloadMedia(msg)
+  }
+
+  /**
+   * Check if a chatId is in the allowedDMs list.
+   * Handles LID↔phone translation so users can just put phone numbers in the env var.
    */
   async _resolveAllowlist() {
     const phoneEntries = this.config.allowedDMs.filter(e => e.endsWith('@s.whatsapp.net'))
@@ -296,6 +362,7 @@ export default class WhatsAppAdapter extends BaseAdapter {
       msg.message?.extendedTextMessage?.text ||
       msg.message?.imageMessage?.caption ||
       msg.message?.videoMessage?.caption ||
+      msg.message?.documentMessage?.caption ||
       ''
 
     // Extract mentions (needed for group mention-gating)
@@ -307,7 +374,7 @@ export default class WhatsAppAdapter extends BaseAdapter {
       return (myNumber && mBase === myNumber) || (myLidNumber && mBase === myLidNumber)
     })
 
-    // Group mention-only gating — bail before downloading images
+    // Group mention-only gating — bail before downloading media
     if (isGroup && this.config.respondToMentionsOnly && !isMentioned) {
       return
     }
@@ -316,7 +383,7 @@ export default class WhatsAppAdapter extends BaseAdapter {
     let image = null
     if (msg.message?.imageMessage) {
       console.log('[WhatsApp] Downloading image...')
-      const buffer = await this.downloadImage(msg)
+      const buffer = await this.downloadMedia(msg)
       if (buffer) {
         image = {
           data: buffer.toString('base64'),
@@ -329,7 +396,75 @@ export default class WhatsAppAdapter extends BaseAdapter {
       }
     }
 
-    if (!text && !image) return
+    // Check for voice/audio message
+    if (msg.message?.audioMessage) {
+      const audioMsg = msg.message.audioMessage
+      const isVoiceNote = audioMsg.ptt === true
+      console.log(`[WhatsApp] Downloading ${isVoiceNote ? 'voice note' : 'audio'}...`)
+
+      const buffer = await this.downloadMedia(msg)
+      if (buffer) {
+        const mimeType = audioMsg.mimetype || 'audio/ogg'
+        const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'mp4' : 'ogg'
+        const filename = `voice_${Date.now()}.${ext}`
+
+        console.log(`[WhatsApp] Audio downloaded (${buffer.length} bytes), transcribing...`)
+        const transcript = await transcribeAudio(buffer, { filename, mimeType })
+
+        if (transcript) {
+          console.log(`[WhatsApp] Transcription: "${transcript.substring(0, 80)}..."`)
+          text = transcript
+        } else {
+          text = '[Voice message - transcription failed]'
+        }
+      } else {
+        text = '[Voice message - could not download]'
+      }
+    }
+
+    // Check for document (PDF, etc.)
+    let file = null
+    if (msg.message?.documentMessage) {
+      const doc = msg.message.documentMessage
+      const rawName = doc.fileName || `file_${Date.now()}`
+
+      // Pre-check file size from metadata to avoid large downloads
+      const fileSize = Number(doc.fileLength) || 0
+      if (fileSize && fileSize > UPLOAD_LIMITS.maxBytes) {
+        console.warn(`[WhatsApp] Rejecting document ${rawName}: ${fileSize} bytes exceeds limit ${UPLOAD_LIMITS.maxBytes}`)
+        try {
+          await this.sock.sendMessage(jid, { text: `Sorry, that file is too large (max ${Math.floor(UPLOAD_LIMITS.maxBytes / 1024 / 1024)}MB).` })
+        } catch {}
+        return
+      }
+
+      console.log(`[WhatsApp] Downloading document: ${rawName} (${doc.mimetype})...`)
+
+      try {
+        const buffer = await this.downloadMedia(msg)
+        if (buffer) {
+          file = saveUpload({
+            buffer,
+            fileName: rawName,
+            mimeType: doc.mimetype,
+            platform: 'whatsapp',
+            chatId: jid
+          })
+          console.log(`[WhatsApp] Document saved: ${file.path} (${file.size} bytes)`)
+        }
+      } catch (err) {
+        console.error('[WhatsApp] Failed to save document:', err.message)
+        if (err.message.includes('exceeds limit')) {
+          try { await this.sock.sendMessage(jid, { text: `File rejected: ${err.message}` }) } catch {}
+        }
+      }
+
+      if (!text) {
+        text = `[File: ${file?.name || rawName}]`
+      }
+    }
+
+    if (!text && !image && !file) return
 
     this.emitMessage({
       chatId: jid,
@@ -338,6 +473,7 @@ export default class WhatsAppAdapter extends BaseAdapter {
       sender,
       mentions: isMentioned ? ['self'] : mentions,
       image,
+      file,
       raw: msg
     })
   }

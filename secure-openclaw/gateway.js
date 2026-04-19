@@ -13,6 +13,7 @@ import SessionManager from './sessions/manager.js'
 import AgentRunner from './agent/runner.js'
 import CommandHandler from './commands/handler.js'
 import { Composio } from '@composio/client'
+import { cleanupOldUploads, UPLOAD_LIMITS } from './tools/uploads.js'
 
 /**
  * Secure OpenClaw Gateway - Routes messages between messaging platforms and Claude agent
@@ -39,6 +40,27 @@ class Gateway {
     this.setupQueueMonitoring()
     this.setupAgentMonitoring()
     this.setupCronExecution()
+    this.setupUploadCleanup()
+  }
+
+  /**
+   * Prune uploads older than UPLOAD_LIMITS.retentionDays, once at startup and
+   * daily thereafter. Keeps disk usage bounded without manual intervention.
+   */
+  setupUploadCleanup() {
+    const run = () => {
+      try {
+        const deleted = cleanupOldUploads()
+        if (deleted > 0) {
+          console.log(`[Uploads] Pruned ${deleted} file(s) older than ${UPLOAD_LIMITS.retentionDays}d`)
+        }
+      } catch (err) {
+        console.error('[Uploads] Cleanup failed:', err.message)
+      }
+    }
+    // Delay first run slightly so it doesn't block startup
+    setTimeout(run, 30_000)
+    this.uploadCleanupInterval = setInterval(run, 24 * 60 * 60 * 1000)
   }
 
   async initMcpServers() {
@@ -359,14 +381,15 @@ class Gateway {
           await adapter.react(message.chatId, message.raw.key.id, '⏳')
         }
 
-        // Enqueue agent run with optional image
+        // Enqueue agent run with optional image/file
         console.log(`[${platform.toUpperCase()}] Processing...`)
         const response = await this.agentRunner.enqueueRun(
           sessionKey,
           message.text,
           adapter,
           message.chatId,
-          message.image  // Pass image if present
+          message.image,  // Pass image if present
+          message.file    // Pass file if present
         )
 
         if (adapter.stopTyping) {
@@ -776,6 +799,12 @@ class Gateway {
 
     // Stop cron scheduler
     this.agentRunner.agent.stopCron()
+
+    // Stop upload cleanup timer
+    if (this.uploadCleanupInterval) {
+      clearInterval(this.uploadCleanupInterval)
+      this.uploadCleanupInterval = null
+    }
 
     for (const adapter of this.adapters.values()) {
       try {

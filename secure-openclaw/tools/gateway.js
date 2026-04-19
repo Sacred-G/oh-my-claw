@@ -1,5 +1,9 @@
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
+import fs from 'fs'
+import path from 'path'
+import os from 'os'
+import OpenAI from 'openai'
 
 /**
  * Gateway context - set by gateway before agent runs
@@ -172,6 +176,100 @@ export function createGatewayMcpServer() {
 
           const successful = results.filter(r => r.success).length
           return { success: true, sent: successful, failed: results.length - successful, results }
+        }
+      ),
+
+      tool(
+        'send_image',
+        'Send a local image file to a chat',
+        {
+          platform: z.enum(['whatsapp', 'imessage', 'telegram', 'signal']).describe('The messaging platform'),
+          chat_id: z.string().describe('The chat ID'),
+          image_path: z.string().describe('Absolute path to the image file'),
+          caption: z.string().optional().describe('Optional caption for the image')
+        },
+        async ({ platform, chat_id, image_path, caption = '' }) => {
+          const { gateway } = gatewayContext
+          if (!gateway) return { success: false, error: 'Gateway not available' }
+          
+          const adapter = gateway.adapters.get(platform)
+          if (!adapter) return { success: false, error: `Platform ${platform} not connected` }
+          
+          try {
+            await adapter.sendImage(chat_id, image_path, caption)
+            return { success: true, platform, chat_id, image_path }
+          } catch (err) {
+            return { success: false, error: err.message }
+          }
+        }
+      ),
+
+      tool(
+        'send_document',
+        'Send a local document/file to a chat',
+        {
+          platform: z.enum(['whatsapp', 'imessage', 'telegram', 'signal']).describe('The messaging platform'),
+          chat_id: z.string().describe('The chat ID'),
+          file_path: z.string().describe('Absolute path to the document file'),
+          caption: z.string().optional().describe('Optional caption')
+        },
+        async ({ platform, chat_id, file_path, caption = '' }) => {
+          const { gateway } = gatewayContext
+          if (!gateway) return { success: false, error: 'Gateway not available' }
+          
+          const adapter = gateway.adapters.get(platform)
+          if (!adapter) return { success: false, error: `Platform ${platform} not connected` }
+          
+          try {
+            await adapter.sendDocument(chat_id, file_path, caption)
+            return { success: true, platform, chat_id, file_path }
+          } catch (err) {
+            return { success: false, error: err.message }
+          }
+        }
+      ),
+
+      tool(
+        'generate_image',
+        'Generate an image based on a prompt and save it locally to the server. Returns the absolute file path, which can then be used with send_image.',
+        {
+          prompt: z.string().describe('The text prompt for image generation'),
+          size: z.string().optional().default('1024x1024').describe('The size of the generated image')
+        },
+        async ({ prompt, size }) => {
+          try {
+            const openai = new OpenAI({
+              apiKey: process.env.OPENAI_API_KEY
+            })
+            
+            // Using gpt-image-1.5 as requested
+            const response = await openai.images.generate({
+              model: 'gpt-image-1.5',
+              prompt,
+              size,
+              response_format: 'b64_json'
+            })
+            
+            const b64Data = response.data[0].b64_json
+            if (!b64Data) {
+              return { success: false, error: 'No image data returned from API' }
+            }
+            
+            // Save to uploads directory
+            const workspacePath = path.join(os.homedir(), 'secure-openclaw')
+            const uploadsDir = path.join(workspacePath, 'uploads')
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true })
+            }
+            
+            const filename = `generated_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.png`
+            const filepath = path.join(uploadsDir, filename)
+            fs.writeFileSync(filepath, Buffer.from(b64Data, 'base64'))
+            
+            return { success: true, filepath, prompt }
+          } catch (err) {
+            return { success: false, error: err.message }
+          }
         }
       )
     ]

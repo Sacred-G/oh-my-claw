@@ -7,6 +7,9 @@ import ClaudeAgent from './claude-agent.js'
 import McpBridge from './mcp-bridge.js'
 import { buildSystemPrompt } from './prompt-builder.js'
 
+const IMAGE_MIME_PREFIX = 'image/'
+const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.svg'])
+
 /**
  * Agent run coordinator with task queue
  * Uses Claude Agent SDK directly instead of HTTP server
@@ -87,7 +90,7 @@ export default class AgentRunner extends EventEmitter {
   /**
    * Enqueue a run for a session
    */
-  async enqueueRun(sessionKey, message, adapter, chatId, image = null) {
+  async enqueueRun(sessionKey, message, adapter, chatId, image = null, file = null) {
     if (!this.queues.has(sessionKey)) {
       this.queues.set(sessionKey, { items: [], processing: false })
     }
@@ -103,6 +106,7 @@ export default class AgentRunner extends EventEmitter {
         adapter,
         chatId,
         image,
+        file,
         mcpServers: this.mcpServers || {},
         resolve,
         reject,
@@ -277,14 +281,71 @@ export default class AgentRunner extends EventEmitter {
    * Execute a single agent run with streaming messages
    */
   async executeRun(run) {
-    const { sessionKey, message, adapter, chatId, image, mcpServers } = run
+    const { sessionKey, message: originalMessage, adapter, chatId, image, file, mcpServers } = run
     const platform = this.extractPlatform(sessionKey)
+
+    let effectiveImage = image
+
+    // Prepend file info if present
+    let message = originalMessage
+    if (file) {
+      const workspacePath = this.agent.workspace || path.join(os.homedir(), 'secure-openclaw')
+      const relativePath = path.relative(workspacePath, file.path)
+      const extension = path.extname(file.name || file.path || '').toLowerCase()
+      const isImageFile = (file.mimetype && file.mimetype.startsWith(IMAGE_MIME_PREFIX)) || IMAGE_EXTENSIONS.has(extension)
+
+      if (!effectiveImage && isImageFile && fs.existsSync(file.path)) {
+        try {
+          const buffer = fs.readFileSync(file.path)
+          effectiveImage = {
+            data: buffer.toString('base64'),
+            mediaType: file.mimetype || `image/${extension.replace('.', '') || 'jpeg'}`
+          }
+          message = `[I have uploaded an image file for you: ${file.name} (path: ${relativePath})]
+
+${originalMessage}`
+        } catch (err) {
+          console.error('[Runner] Error loading uploaded image file:', err.message)
+        }
+      }
+      
+      let pdfExtracted = false
+      let txtRelativePath = ''
+      
+      if (!isImageFile && (file.mimetype === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+        try {
+          const pdfParse = (await import('pdf-parse-new')).default || await import('pdf-parse-new')
+          const parseFunc = typeof pdfParse === 'function' ? pdfParse : pdfParse.default
+          if (parseFunc) {
+            const dataBuffer = fs.readFileSync(file.path)
+            const data = await parseFunc(dataBuffer)
+            const txtPath = file.path + '.txt'
+            fs.writeFileSync(txtPath, data.text, 'utf-8')
+            txtRelativePath = path.relative(workspacePath, txtPath)
+            pdfExtracted = true
+          }
+        } catch (err) {
+          console.error('[Runner] Error parsing PDF:', err.message)
+        }
+      }
+
+      if (pdfExtracted) {
+        message = `[I have uploaded a PDF file for you: ${file.name} (path: ${relativePath}). Since it is a binary PDF, I have also extracted its text and saved it to a text file for you to read at: ${txtRelativePath}]
+
+${originalMessage}`
+      } else if (!isImageFile || !effectiveImage) {
+        message = `[I have uploaded a file for you: ${file.name} (type: ${file.mimetype}, path: ${relativePath})]
+
+${originalMessage}`
+      }
+    }
 
     // Record user message in transcript
     this.sessionManager.appendTranscript(sessionKey, {
       role: 'user',
       content: message,
-      hasImage: !!image
+      hasImage: !!effectiveImage,
+      hasFile: !!file
     })
 
     // Create canUseTool callback for messaging platforms
@@ -299,7 +360,7 @@ export default class AgentRunner extends EventEmitter {
         sessionKey,
         platform,
         chatId,
-        image,
+        image: effectiveImage,
         mcpServers,
         canUseTool
       })) {
@@ -411,7 +472,7 @@ export default class AgentRunner extends EventEmitter {
    */
   async executeWithOpenAI(message, sessionKey, adapter, chatId, image = null) {
     const { OpenAIProvider } = await import('../providers/openai-provider.js')
-    const workspace = path.join(os.homedir(), 'secure-openclaw')
+    const workspace = this.agent.workspace || path.join(os.homedir(), 'secure-openclaw')
     const platform = this.extractPlatform(sessionKey)
 
     // Initialize MCP Bridge with full context

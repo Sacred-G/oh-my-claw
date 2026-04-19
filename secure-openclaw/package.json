@@ -11,7 +11,8 @@
     "start": "node cli.js start",
     "chat": "node cli.js chat",
     "setup": "node cli.js setup",
-    "cli": "node cli.js"
+    "cli": "node cli.js",
+    "skills:manifest": "node scripts/build-skills-manifest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
@@ -21,6 +22,7 @@
     "dotenv": "^17.2.4",
     "node-telegram-bot-api": "^0.66.0",
     "oh-my-logo": "^0.4.0",
+    "pdf-parse-new": "^2.0.0",
     "pino": "^9.6.0",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",

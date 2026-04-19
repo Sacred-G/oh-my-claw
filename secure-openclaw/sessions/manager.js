@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const TRANSCRIPTS_DIR = path.join(__dirname, '..', 'transcripts')
+const MAX_IN_MEMORY = 200     // Max entries kept in memory per session
+const MAX_JSONL_ENTRIES = 500 // When JSONL exceeds this, archive old entries
 
 /**
  * Session manager with JSONL transcript storage
@@ -62,13 +64,19 @@ export default class SessionManager {
       timestamp: entry.timestamp || Date.now()
     }
 
-    // Add to in-memory transcript
+    // Add to in-memory transcript (capped)
     session.transcript.push(timestampedEntry)
+    if (session.transcript.length > MAX_IN_MEMORY) {
+      session.transcript = session.transcript.slice(-MAX_IN_MEMORY)
+    }
 
     // Append to JSONL file
     const filename = this.getTranscriptFilename(key)
     const line = JSON.stringify(timestampedEntry) + '\n'
     fs.appendFileSync(filename, line, 'utf-8')
+
+    // Check if JSONL file needs pruning
+    this.maybePruneFile(filename)
   }
 
   /**
@@ -94,8 +102,38 @@ export default class SessionManager {
       }
     }
 
-    // Return last N entries
+    // Return last N entries (capped at MAX_IN_MEMORY)
     return session.transcript.slice(-limit)
+  }
+
+  /**
+   * Prune a JSONL file if it exceeds MAX_JSONL_ENTRIES.
+   * Moves old entries to a .archive file and keeps only the last MAX_IN_MEMORY entries.
+   */
+  maybePruneFile(filename) {
+    try {
+      const content = fs.readFileSync(filename, 'utf-8')
+      const lines = content.trim().split('\n').filter(Boolean)
+
+      if (lines.length <= MAX_JSONL_ENTRIES) return
+
+      console.log(`[Sessions] Pruning transcript: ${path.basename(filename)} (${lines.length} entries)`)
+
+      // Archive old entries
+      const archivePath = filename.replace('.jsonl', '.archive.jsonl')
+      const oldEntries = lines.slice(0, lines.length - MAX_IN_MEMORY)
+      const keepEntries = lines.slice(-MAX_IN_MEMORY)
+
+      // Append old entries to archive
+      fs.appendFileSync(archivePath, oldEntries.join('\n') + '\n', 'utf-8')
+
+      // Rewrite main file with only recent entries
+      fs.writeFileSync(filename, keepEntries.join('\n') + '\n', 'utf-8')
+
+      console.log(`[Sessions] Archived ${oldEntries.length} entries, kept ${keepEntries.length}`)
+    } catch (err) {
+      console.error(`[Sessions] Prune failed for ${filename}:`, err.message)
+    }
   }
 
   /**
