@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="secure-openclaw/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-MIT-111827"></a>
+  <a href="gateway/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-MIT-111827"></a>
   <img alt="Node.js" src="https://img.shields.io/badge/node-18%2B-22c55e">
   <img alt="Gateway" src="https://img.shields.io/badge/gateway-Node.js-38bdf8">
   <img alt="Dashboard" src="https://img.shields.io/badge/dashboard-Next.js-000000">
@@ -12,12 +12,12 @@
 
 # Oh My Claw
 
-Oh My Claw is currently a local-first personal agent gateway. The source package
-still lives under `secure-openclaw/` for now, but the runtime identity, package
-name, CLI command, agent IDs, Docker workspace, and state paths are named
-`oh-my-claw`. It connects messaging channels to one shared agent runtime with
-providers, memory files, MCP-style tools, scheduling, uploads, Composio
-integrations, and a Next.js dashboard.
+Oh My Claw is currently a local-first personal agent gateway. The source
+package lives under `gateway/`, while the runtime identity, package name, CLI
+command, agent IDs, Docker workspace, and state paths are named `oh-my-claw`.
+It connects messaging channels to one shared agent runtime with providers,
+memory files, MCP-style tools, scheduling, uploads, Composio integrations, and
+a Next.js dashboard.
 
 This repository is **not yet** the production-grade cognitive runtime described
 in the project instructions. The current implementation is a working Node.js
@@ -29,16 +29,16 @@ eventually move behind a core-authoritative runtime.
 
 Implemented now:
 
-- Node.js gateway in `secure-openclaw/gateway.js`.
+- Node.js gateway in `gateway/gateway.js`.
 - Messaging adapters for WhatsApp, Telegram, Signal, and iMessage.
-- Terminal CLI in `secure-openclaw/cli.js`.
+- Terminal CLI in `gateway/cli.js`.
 - Provider layer for Claude Agent SDK, Opencode, and OpenAI.
-- File-backed memory through `secure-openclaw/memory/manager.js`.
+- File-backed memory through `gateway/memory/manager.js`.
 - MCP bridge and built-in tools for gateway messaging, cron, AppleScript, file
   access, uploads, PDFs, and Composio.
-- Queue/session handling through `secure-openclaw/agent/runner.js` and
-  `secure-openclaw/sessions/manager.js`.
-- Next.js dashboard in `secure-openclaw/ui`.
+- Queue/session handling through `gateway/agent/runner.js` and
+  `gateway/sessions/manager.js`.
+- Next.js dashboard in `gateway/ui`.
 - Docker Compose deployment for the gateway.
 
 Not implemented yet:
@@ -92,7 +92,7 @@ Phase 2 vertical slice, not more channel breadth.
 +-- README.md
 +-- assets/
 |   +-- openclaw-logo.svg
-+-- secure-openclaw/
++-- gateway/
     +-- cli.js                    # interactive CLI and terminal chat
     +-- config.js                 # gateway/provider/channel config
     +-- gateway.js                # HTTP gateway and messaging adapter host
@@ -127,7 +127,7 @@ Phase 2 vertical slice, not more channel breadth.
 Gateway:
 
 ```bash
-cd secure-openclaw
+cd gateway
 npm install
 touch .env
 npm run cli
@@ -145,7 +145,7 @@ npm run cli      # interactive menu
 Dashboard:
 
 ```bash
-cd secure-openclaw/ui
+cd gateway/ui
 npm install
 cp .env.example .env.local
 npm run dev
@@ -163,7 +163,7 @@ ADMIN_PASSWORD=replace-me
 
 ## Environment
 
-Create `secure-openclaw/.env` locally. Do not commit it.
+Create `gateway/.env` locally. Do not commit it.
 
 | Variable | Required | Description |
 | --- | --- | --- |
@@ -188,7 +188,7 @@ Create `secure-openclaw/.env` locally. Do not commit it.
 | `SIGNAL_ALLOWED_DMS` | Optional | Signal DM allowlist |
 | `SIGNAL_ALLOWED_GROUPS` | Optional | Signal group allowlist |
 
-Create `secure-openclaw/ui/.env.local` for the dashboard:
+Create `gateway/ui/.env.local` for the dashboard:
 
 | Variable | Required | Description |
 | --- | --- | --- |
@@ -199,7 +199,7 @@ Create `secure-openclaw/ui/.env.local` for the dashboard:
 
 ## Providers
 
-Provider registration lives in `secure-openclaw/providers/index.js`.
+Provider registration lives in `gateway/providers/index.js`.
 
 | Provider | Config value | Notes |
 | --- | --- | --- |
@@ -207,7 +207,7 @@ Provider registration lives in `secure-openclaw/providers/index.js`.
 | Opencode | `opencode` | Uses configured host, port, and model |
 | OpenAI | `openai` | Uses Chat Completions and the MCP bridge |
 
-Provider selection is currently configured in `secure-openclaw/config.js`:
+Provider selection is currently configured in `gateway/config.js`:
 
 ```js
 agent: {
@@ -225,12 +225,12 @@ agent: {
 
 | Channel | File | Notes |
 | --- | --- | --- |
-| Terminal | `secure-openclaw/cli.js` | Best for local testing |
-| WhatsApp | `secure-openclaw/adapters/whatsapp.js` | Uses Baileys and QR authentication |
-| Telegram | `secure-openclaw/adapters/telegram.js` | Uses bot token and allowlists |
-| Signal | `secure-openclaw/adapters/signal.js` | Requires `signal-cli` |
-| iMessage | `secure-openclaw/adapters/imessage.js` | macOS only, requires `imsg` |
-| Dashboard | `secure-openclaw/ui` | Next.js app that proxies gateway HTTP APIs |
+| Terminal | `gateway/cli.js` | Best for local testing |
+| WhatsApp | `gateway/adapters/whatsapp.js` | Uses Baileys and QR authentication |
+| Telegram | `gateway/adapters/telegram.js` | Uses bot token and allowlists |
+| Signal | `gateway/adapters/signal.js` | Requires `signal-cli` |
+| iMessage | `gateway/adapters/imessage.js` | macOS only, requires `imsg` |
+| Dashboard | `gateway/ui` | Next.js app that proxies gateway HTTP APIs |
 
 Each messaging channel has DM/group allowlists. Use `*` only when broad access
 is intentional.
@@ -265,7 +265,7 @@ These are not the Phase 2 cognitive runtime endpoints. There is no
 
 ## Tool Surface
 
-Configured host tools in `secure-openclaw/config.js` include:
+Configured host tools in `gateway/config.js` include:
 
 - File and shell tools: `Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep`.
 - Agent utilities: `TodoWrite`, `Skill`, `AskUserQuestion`, `read_pdf`.
@@ -277,7 +277,7 @@ Guest Telegram users get a reduced tool list with no filesystem, shell, host
 memory, cron, or AppleScript access.
 
 External MCP server definitions can be added in
-`secure-openclaw/mcp-servers.json`. That file is ignored because it often
+`gateway/mcp-servers.json`. That file is ignored because it often
 contains local paths or secrets.
 
 ## Memory
@@ -287,16 +287,16 @@ The current memory system is file-backed, not Postgres/vector-backed.
 Tracked source:
 
 ```text
-secure-openclaw/memory/manager.js
+gateway/memory/manager.js
 ```
 
 Runtime memory is local and ignored:
 
 ```text
-secure-openclaw/MEMORY.md
-secure-openclaw/memory/*.md
-secure-openclaw/memory/*.json
-secure-openclaw/memory/*.jsonl
+gateway/MEMORY.md
+gateway/memory/*.md
+gateway/memory/*.json
+gateway/memory/*.jsonl
 ```
 
 ## Deployment
@@ -304,7 +304,7 @@ secure-openclaw/memory/*.jsonl
 Local gateway:
 
 ```bash
-cd secure-openclaw
+cd gateway
 npm install
 npm start
 ```
@@ -312,12 +312,12 @@ npm start
 Docker gateway:
 
 ```bash
-cd secure-openclaw
+cd gateway
 docker compose up -d --build
 docker compose logs -f
 ```
 
-Docker Compose reads `secure-openclaw/.env`, exposes port `4096`, and persists
+Docker Compose reads `gateway/.env`, exposes port `4096`, and persists
 WhatsApp auth plus memory in Docker volumes.
 
 ## Development Commands
@@ -348,15 +348,15 @@ Keep these local:
 
 | Path | Why |
 | --- | --- |
-| `secure-openclaw/.env` | API keys and tokens |
-| `secure-openclaw/ui/.env.local` | Dashboard secrets |
-| `secure-openclaw/composio-toolkits.json` | Composio user/auth config |
-| `secure-openclaw/mcp-servers.json` | Local MCP paths and secrets |
-| `secure-openclaw/auth_whatsapp/` | WhatsApp credentials |
-| `secure-openclaw/transcripts/*.jsonl` | Conversation logs |
-| `secure-openclaw/uploads/` | User files and generated files |
-| `secure-openclaw/memory/*.md` | Personal memory |
-| `secure-openclaw/.curated/`, `.system/`, local skill workspaces | Local skill cache and private drafts |
+| `gateway/.env` | API keys and tokens |
+| `gateway/ui/.env.local` | Dashboard secrets |
+| `gateway/composio-toolkits.json` | Composio user/auth config |
+| `gateway/mcp-servers.json` | Local MCP paths and secrets |
+| `gateway/auth_whatsapp/` | WhatsApp credentials |
+| `gateway/transcripts/*.jsonl` | Conversation logs |
+| `gateway/uploads/` | User files and generated files |
+| `gateway/memory/*.md` | Personal memory |
+| `gateway/.curated/`, `.system/`, local skill workspaces | Local skill cache and private drafts |
 
 Before pushing:
 
@@ -393,4 +393,4 @@ The production target should include:
 
 ## License
 
-MIT. See [secure-openclaw/LICENSE.md](secure-openclaw/LICENSE.md).
+MIT. See [gateway/LICENSE.md](gateway/LICENSE.md).
