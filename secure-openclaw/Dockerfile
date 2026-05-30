@@ -27,6 +27,7 @@ RUN useradd -m -s /bin/bash claw && chown -R claw:claw /app
 # Set up paths and workspace for the non-root user
 ENV PATH="/home/claw/.opencode/bin:/home/claw/.local/bin:${PATH}"
 ENV HOME=/home/claw
+ENV WORKSPACE_DIR=/home/claw/oh-my-claw
 
 # Move opencode CLI to the new user's path
 RUN cp -r /root/.opencode /home/claw/.opencode 2>/dev/null || true && \
@@ -34,7 +35,7 @@ RUN cp -r /root/.opencode /home/claw/.opencode 2>/dev/null || true && \
 
 # Create workspace and Claude config as the non-root user
 USER claw
-RUN mkdir -p /home/claw/secure-openclaw/memory && \
+RUN mkdir -p /home/claw/oh-my-claw/memory && \
     mkdir -p /home/claw/.claude && \
     echo '{}' > /home/claw/.claude/statsig_metadata.json && \
     echo '{"hasCompletedOnboarding":true}' > /home/claw/.claude/settings.json

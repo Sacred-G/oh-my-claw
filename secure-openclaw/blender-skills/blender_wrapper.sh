@@ -4,7 +4,7 @@
 # This script provides a convenient way to execute Blender commands from the command line
 
 BLENDER_PATH="/Applications/Blender.app/Contents/MacOS/Blender"
-CONTROLLER_SCRIPT="$HOME/secure-openclaw/blender-skills/blender_controller.py"
+CONTROLLER_SCRIPT="$HOME/oh-my-claw/blender-skills/blender_controller.py"
 
 # Check if Blender exists
 if [ ! -f "$BLENDER_PATH" ]; then

@@ -2,7 +2,7 @@
 
 ## Wrapper Command
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh <command> '<json_params>'
+~/oh-my-claw/blender-skills/blender_wrapper.sh <command> '<json_params>'
 ```
 
 ## Commands Cheat Sheet
@@ -195,16 +195,16 @@ Formula: radians = degrees × (π / 180) ≈ degrees × 0.01745
 
 ## File Locations
 
-- **Wrapper**: `~/secure-openclaw/blender-skills/blender_wrapper.sh`
-- **Controller**: `~/secure-openclaw/blender-skills/blender_controller.py`
-- **Documentation**: `~/secure-openclaw/blender-skills/README.md`
-- **Examples**: `~/secure-openclaw/blender-skills/examples/`
+- **Wrapper**: `~/oh-my-claw/blender-skills/blender_wrapper.sh`
+- **Controller**: `~/oh-my-claw/blender-skills/blender_controller.py`
+- **Documentation**: `~/oh-my-claw/blender-skills/README.md`
+- **Examples**: `~/oh-my-claw/blender-skills/examples/`
 
 ## Example Script
 
-See: `~/secure-openclaw/blender-skills/examples/create_colorful_scene.sh`
+See: `~/oh-my-claw/blender-skills/examples/create_colorful_scene.sh`
 
 Run with:
 ```bash
-~/secure-openclaw/blender-skills/examples/create_colorful_scene.sh
+~/oh-my-claw/blender-skills/examples/create_colorful_scene.sh
 ```

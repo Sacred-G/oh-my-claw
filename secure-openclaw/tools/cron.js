@@ -5,7 +5,10 @@ import path from 'path'
 import os from 'os'
 import { EventEmitter } from 'events'
 
-const JOBS_FILE = path.join(os.homedir(), '.secure-openclaw', 'cron-jobs.json')
+const STATE_DIR = path.join(os.homedir(), '.oh-my-claw')
+const LEGACY_STATE_DIR = path.join(os.homedir(), '.secure-openclaw')
+const JOBS_FILE = path.join(STATE_DIR, 'cron-jobs.json')
+const LEGACY_JOBS_FILE = path.join(LEGACY_STATE_DIR, 'cron-jobs.json')
 
 /**
  * Cron scheduler state management
@@ -28,13 +31,17 @@ class CronScheduler extends EventEmitter {
 
   loadJobs() {
     try {
-      if (fs.existsSync(JOBS_FILE)) {
-        const data = JSON.parse(fs.readFileSync(JOBS_FILE, 'utf-8'))
+      const sourceFile = fs.existsSync(JOBS_FILE) ? JOBS_FILE : LEGACY_JOBS_FILE
+      if (fs.existsSync(sourceFile)) {
+        const data = JSON.parse(fs.readFileSync(sourceFile, 'utf-8'))
         for (const job of data) {
           this.jobs.set(job.id, job)
           this.scheduleJob(job)
         }
         console.log(`[Cron] Loaded ${this.jobs.size} jobs`)
+        if (sourceFile === LEGACY_JOBS_FILE) {
+          this.saveJobs()
+        }
       }
     } catch (err) {
       console.error('[Cron] Failed to load jobs:', err.message)

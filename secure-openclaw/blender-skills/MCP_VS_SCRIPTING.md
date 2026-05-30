@@ -280,7 +280,7 @@ uv --version
 ```bash
 # Process 100 frames
 for frame in {1..100}; do
-  ~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene \
+  ~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene \
     "{\"output_path\": \"/renders/frame_$frame.png\"}"
 done
 ```

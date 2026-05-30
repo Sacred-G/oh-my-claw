@@ -144,10 +144,10 @@ User: "Create a red cube in Blender at position 2, 0, 0"
 
 Agent executes:
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
   '{"obj_type": "CUBE", "name": "RedCube", "location": [2, 0, 0]}'
 
-~/secure-openclaw/blender-skills/blender_wrapper.sh add_material \
+~/oh-my-claw/blender-skills/blender_wrapper.sh add_material \
   '{"obj_name": "RedCube", "material_name": "Red", "color": [1.0, 0.0, 0.0]}'
 ```
 
@@ -176,7 +176,7 @@ Potential additions:
 ## File Structure
 
 ```
-~/secure-openclaw/blender-skills/
+~/oh-my-claw/blender-skills/
 ├── blender_controller.py      # Core Python API
 ├── blender_wrapper.sh          # CLI wrapper
 ├── SKILLS.md                   # Skill definitions

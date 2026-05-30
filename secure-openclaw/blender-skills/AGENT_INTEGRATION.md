@@ -34,9 +34,9 @@ Steps:
 
 Commands:
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "CUBE", "name": "RedCube", "location": [0, 0, 0]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "CUBE", "name": "RedCube", "location": [0, 0, 0]}'
 
-~/secure-openclaw/blender-skills/blender_wrapper.sh add_material '{"obj_name": "RedCube", "material_name": "Red", "color": [1.0, 0.0, 0.0]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh add_material '{"obj_name": "RedCube", "material_name": "Red", "color": [1.0, 0.0, 0.0]}'
 ```
 
 Response: "I created a red cube in Blender at the origin (0, 0, 0)."
@@ -47,7 +47,7 @@ User: "What objects are in my Blender scene?"
 
 Command:
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh list_objects
+~/oh-my-claw/blender-skills/blender_wrapper.sh list_objects
 ```
 
 Parse the JSON and summarize: "Your Blender scene has 3 objects: a Camera, a Cube at position (0, 0, 0), and a Light."
@@ -58,7 +58,7 @@ User: "Move the cube to position 5, 0, 0 and make it twice as big"
 
 Command:
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh transform_object '{"name": "Cube", "location": [5, 0, 0], "scale": [2, 2, 2]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh transform_object '{"name": "Cube", "location": [5, 0, 0], "scale": [2, 2, 2]}'
 ```
 
 Response: "I moved the cube to position (5, 0, 0) and scaled it to 2x its original size."
@@ -76,17 +76,17 @@ Steps:
 Commands:
 ```bash
 # Create blue cube
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "CUBE", "name": "BlueCube", "location": [0, 0, 0]}'
-~/secure-openclaw/blender-skills/blender_wrapper.sh add_material '{"obj_name": "BlueCube", "material_name": "Blue", "color": [0.2, 0.5, 1.0]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "CUBE", "name": "BlueCube", "location": [0, 0, 0]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh add_material '{"obj_name": "BlueCube", "material_name": "Blue", "color": [0.2, 0.5, 1.0]}'
 
 # Create light
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "LIGHT", "name": "MainLight", "location": [5, -5, 5]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "LIGHT", "name": "MainLight", "location": [5, -5, 5]}'
 
 # Position camera
-~/secure-openclaw/blender-skills/blender_wrapper.sh set_camera_view '{"location": [7, -7, 5], "rotation": [1.1, 0, 0.8]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh set_camera_view '{"location": [7, -7, 5], "rotation": [1.1, 0, 0.8]}'
 
 # Render
-~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene '{"output_path": "/tmp/my_scene.png"}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene '{"output_path": "/tmp/my_scene.png"}'
 ```
 
 Response: "I created a scene with a blue cube, added a light, positioned the camera, and rendered it to /tmp/my_scene.png"
@@ -99,7 +99,7 @@ Use a bash loop:
 ```bash
 for x in {0..2}; do
   for y in {0..2}; do
-    ~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+    ~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
       "{\"obj_type\": \"CUBE\", \"name\": \"Cube_${x}_${y}\", \"location\": [$((x*3)), $((y*3)), 0]}"
   done
 done
@@ -126,7 +126,7 @@ Response: "I created a 3x3 grid of cubes in Blender, spaced 3 units apart."
 
 ### Wrapper Path
 
-Always use full path: `~/secure-openclaw/blender-skills/blender_wrapper.sh`
+Always use full path: `~/oh-my-claw/blender-skills/blender_wrapper.sh`
 
 ### Timeout
 
@@ -222,7 +222,7 @@ If user asks to delete, list the object first to confirm it exists.
 ### Execute arbitrary Python
 For advanced users who know Blender Python:
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh execute_command \
+~/oh-my-claw/blender-skills/blender_wrapper.sh execute_command \
   '{"command": "bpy.context.scene.render.resolution_x"}'
 ```
 
@@ -230,7 +230,7 @@ For advanced users who know Blender Python:
 Use bash scripting for repetitive tasks:
 ```bash
 for i in {1..10}; do
-  ~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+  ~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
     "{\"obj_type\": \"SPHERE\", \"name\": \"Star_$i\", \"location\": [$((RANDOM % 10)), $((RANDOM % 10)), $((RANDOM % 10))]}"
 done
 ```
@@ -240,9 +240,9 @@ Render multiple frames by transforming objects between renders:
 ```bash
 for frame in {0..24}; do
   angle=$(echo "$frame * 0.26" | bc -l)  # 15 degrees per frame
-  ~/secure-openclaw/blender-skills/blender_wrapper.sh transform_object \
+  ~/oh-my-claw/blender-skills/blender_wrapper.sh transform_object \
     "{\"name\": \"Cube\", \"rotation\": [0, 0, $angle]}"
-  ~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene \
+  ~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene \
     "{\"output_path\": \"/tmp/frame_$(printf %04d $frame).png\"}"
 done
 ```
@@ -251,24 +251,24 @@ done
 
 ### Simple cube creation
 ```bash
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
   '{"obj_type": "CUBE", "name": "MyCube", "location": [0, 0, 0]}'
 ```
 
 ### Complete scene setup
 ```bash
 # Objects
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "CUBE", "name": "Box", "location": [0, 0, 0]}'
-~/secure-openclaw/blender-skills/blender_wrapper.sh add_material '{"obj_name": "Box", "material_name": "Red", "color": [1.0, 0.0, 0.0]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "CUBE", "name": "Box", "location": [0, 0, 0]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh add_material '{"obj_name": "Box", "material_name": "Red", "color": [1.0, 0.0, 0.0]}'
 
 # Lighting
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "LIGHT", "name": "Key", "location": [5, -5, 5]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object '{"obj_type": "LIGHT", "name": "Key", "location": [5, -5, 5]}'
 
 # Camera
-~/secure-openclaw/blender-skills/blender_wrapper.sh set_camera_view '{"location": [7, -7, 5], "rotation": [1.1, 0, 0.8]}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh set_camera_view '{"location": [7, -7, 5], "rotation": [1.1, 0, 0.8]}'
 
 # Render
-~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene '{"output_path": "/tmp/scene.png"}'
+~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene '{"output_path": "/tmp/scene.png"}'
 ```
 
 ## Troubleshooting

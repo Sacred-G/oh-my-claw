@@ -14,7 +14,7 @@ I've already done most of the work for you. Here's what's left:
 1. Open Blender
 2. Edit → Preferences → Add-ons
 3. Click "Install..." button
-4. Choose: ~/secure-openclaw/blender-skills/mcp-addon/addon.py
+4. Choose: ~/oh-my-claw/blender-skills/mcp-addon/addon.py
 5. Enable "Blender MCP" checkbox
 ```
 
@@ -70,12 +70,12 @@ Once setup is complete, try saying:
 
 **Addon file location:**
 ```
-~/secure-openclaw/blender-skills/mcp-addon/addon.py
+~/oh-my-claw/blender-skills/mcp-addon/addon.py
 ```
 
 **Full instructions:**
 ```
-~/secure-openclaw/blender-skills/MCP_SETUP_INSTRUCTIONS.md
+~/oh-my-claw/blender-skills/MCP_SETUP_INSTRUCTIONS.md
 ```
 
 ---
@@ -84,7 +84,7 @@ Once setup is complete, try saying:
 
 **Can't find addon file?**
 ```bash
-open ~/secure-openclaw/blender-skills/mcp-addon/
+open ~/oh-my-claw/blender-skills/mcp-addon/
 ```
 
 **Want to verify config?**
@@ -121,7 +121,7 @@ I'll automatically choose the best method for each task!
 
 Read the full guide:
 ```bash
-cat ~/secure-openclaw/blender-skills/MCP_SETUP_INSTRUCTIONS.md
+cat ~/oh-my-claw/blender-skills/MCP_SETUP_INSTRUCTIONS.md
 ```
 
 Or just ask me for help! 😊

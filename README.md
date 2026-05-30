@@ -12,9 +12,11 @@
 
 # Oh My Claw
 
-Oh My Claw is currently a local-first personal agent gateway built around
-`secure-openclaw`. It connects messaging channels to one shared agent runtime
-with providers, memory files, MCP-style tools, scheduling, uploads, Composio
+Oh My Claw is currently a local-first personal agent gateway. The source package
+still lives under `secure-openclaw/` for now, but the runtime identity, package
+name, CLI command, agent IDs, Docker workspace, and state paths are named
+`oh-my-claw`. It connects messaging channels to one shared agent runtime with
+providers, memory files, MCP-style tools, scheduling, uploads, Composio
 integrations, and a Next.js dashboard.
 
 This repository is **not yet** the production-grade cognitive runtime described
@@ -172,6 +174,8 @@ Create `secure-openclaw/.env` locally. Do not commit it.
 | `OPENAI_MODEL` | Optional | OpenAI model override |
 | `PORT` | Optional | Gateway HTTP port, defaults to `4096` |
 | `WORKSPACE_DIR` | Optional | Overrides the project workspace directory |
+| `OH_MY_CLAW_WORKSPACE` | Optional | Direct workspace override for memory manager callers |
+| `SECURE_OPENCLAW_WORKSPACE` | Legacy optional | Backward-compatible workspace override |
 | `WHATSAPP_ALLOWED_DMS` | Optional | Comma-separated WhatsApp DM allowlist, or `*` |
 | `WHATSAPP_ALLOWED_GROUPS` | Optional | Comma-separated WhatsApp group allowlist, or `*` |
 | `TELEGRAM_BOT_TOKEN` | For Telegram | Bot token from BotFather |

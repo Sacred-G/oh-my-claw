@@ -98,7 +98,7 @@ class Gateway {
     } catch (err) {
       console.error('[Composio] Failed to load composio-toolkits.json:', err.message)
     }
-    const userId = toolkitsConfig.user_id || config.agentId || 'secure-openclaw-user'
+    const userId = toolkitsConfig.user_id || config.agentId || 'oh-my-claw-user'
     const pinnedToolkits = Array.isArray(toolkitsConfig.toolkits) ? toolkitsConfig.toolkits : []
     console.log('[Composio] Initializing session',
       pinnedToolkits.length ? `with ${pinnedToolkits.length} pinned toolkit(s)` : '(no pinned toolkits)')
@@ -293,7 +293,7 @@ class Gateway {
     console.log('Oh My Claw Gateway Starting')
     console.log('='.repeat(50))
     console.log(`Agent ID: ${config.agentId}`)
-    console.log(`Workspace: ~/secure-openclaw/`)
+    console.log(`Workspace: ${config.workspace}`)
     console.log('')
 
     const platforms = ['whatsapp', 'imessage', 'telegram', 'signal']

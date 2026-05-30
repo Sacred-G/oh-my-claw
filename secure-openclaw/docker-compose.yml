@@ -1,12 +1,16 @@
+name: oh-my-claw
+
 services:
-  openclaw:
+  oh-my-claw:
     build: .
     env_file: .env
+    environment:
+      WORKSPACE_DIR: /home/claw/oh-my-claw
     ports:
       - "4096:4096"
     volumes:
       - wa-auth:/app/auth_whatsapp
-      - memory:/home/claw/secure-openclaw
+      - memory:/home/claw/oh-my-claw
     restart: unless-stopped
 
 volumes:

@@ -45,12 +45,12 @@ async function animateLines(text, delayMs = 40) {
 async function printHeader() {
   console.log('')
   try {
-    let logo1 = execSync('npx oh-my-logo "SECURE" --filled --color --palette-colors "#FF0000,#FF0000"', {
+    let logo1 = execSync('npx oh-my-logo "OH MY" --filled --color --palette-colors "#FF0000,#FF0000"', {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     })
     logo1 = logo1.replace(/\x1b\[0m\x1b\[\?25h\x1b\[K[\s\n]*/g, '\n').trimEnd()
-    let logo2 = execSync('npx oh-my-logo "OPENCLAW" --filled --color --palette-colors "#FF0000,#FF0000"', {
+    let logo2 = execSync('npx oh-my-logo "CLAW" --filled --color --palette-colors "#FF0000,#FF0000"', {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     })
@@ -58,7 +58,7 @@ async function printHeader() {
     await animateLines(logo1, 60)
     await animateLines(logo2, 60)
   } catch (err) {
-    print('  SECURE-OPENCLAW CLI', colors.red + colors.bold)
+    print('  OH MY CLAW CLI', colors.red + colors.bold)
   }
   await sleep(60)
   print('  Built with Composio', colors.red)
@@ -299,7 +299,7 @@ async function terminalChat() {
     // Initialize Composio
     try {
       const composio = new Composio()
-      const session = await composio.create(config.agentId || 'secure-openclaw-terminal')
+      const session = await composio.create(config.agentId || 'oh-my-claw-terminal')
       mcpServers.composio = {
         type: 'http',
         url: session.mcp.url,
@@ -1206,7 +1206,7 @@ if (args.length === 0) {
     case '--help':
     case '-h':
       await printHeader()
-      print('Usage: secure-openclaw [command]\n', colors.bold)
+      print('Usage: oh-my-claw [command]\n', colors.bold)
       print('Commands:')
       print('  chat     Terminal chat', colors.red)
       print('  start    Start the gateway')
@@ -1221,7 +1221,7 @@ if (args.length === 0) {
 
     default:
       print(`Unknown command: ${command}`, colors.red)
-      print('Run "secure-openclaw help" for usage.')
+      print('Run "oh-my-claw help" for usage.')
       rl.close()
       process.exit(1)
   }

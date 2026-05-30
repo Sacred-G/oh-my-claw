@@ -624,7 +624,7 @@ export default class McpBridge extends EventEmitter {
   }
 
   registerFileTools() {
-    const workspace = path.join(os.homedir(), 'secure-openclaw')
+    const workspace = path.join(os.homedir(), 'oh-my-claw')
 
     this.registerTool('read_pdf', {
       source: 'local:builtin',
@@ -911,7 +911,7 @@ export default class McpBridge extends EventEmitter {
       await this.httpRpc(name, 'initialize', {
         protocolVersion: '2024-11-05',
         capabilities: {},
-        clientInfo: { name: 'secure-openclaw-bridge', version: '1.0.0' }
+        clientInfo: { name: 'oh-my-claw-bridge', version: '1.0.0' }
       })
 
       // Discover tools
@@ -1058,7 +1058,7 @@ export default class McpBridge extends EventEmitter {
       await client.rpc('initialize', {
         protocolVersion: '2024-11-05',
         capabilities: {},
-        clientInfo: { name: 'secure-openclaw-bridge', version: '1.0.0' }
+        clientInfo: { name: 'oh-my-claw-bridge', version: '1.0.0' }
       })
 
       // Send initialized notification

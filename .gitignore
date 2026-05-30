@@ -18,6 +18,7 @@ secure-openclaw/memory/*.md
 secure-openclaw/memory/*.json
 secure-openclaw/memory/*.jsonl
 secure-openclaw/.secure-openclaw/
+secure-openclaw/.oh-my-claw/
 secure-openclaw/composio-toolkits.json
 
 # Local skill caches / personal skill workspaces

@@ -291,7 +291,7 @@ export default class AgentRunner extends EventEmitter {
     // Prepend file info if present
     let message = originalMessage
     if (file) {
-      const workspacePath = this.agent.workspace || path.join(os.homedir(), 'secure-openclaw')
+      const workspacePath = this.agent.workspace || path.join(os.homedir(), 'oh-my-claw')
       const relativePath = path.relative(workspacePath, file.path)
       const extension = path.extname(file.name || file.path || '').toLowerCase()
       const isImageFile = (file.mimetype && file.mimetype.startsWith(IMAGE_MIME_PREFIX)) || IMAGE_EXTENSIONS.has(extension)
@@ -476,7 +476,7 @@ ${originalMessage}`
    */
   async executeWithOpenAI(message, sessionKey, adapter, chatId, image = null) {
     const { OpenAIProvider } = await import('../providers/openai-provider.js')
-    const workspace = this.agent.workspace || path.join(os.homedir(), 'secure-openclaw')
+    const workspace = this.agent.workspace || path.join(os.homedir(), 'oh-my-claw')
     const platform = this.extractPlatform(sessionKey)
 
     // Initialize MCP Bridge with full context

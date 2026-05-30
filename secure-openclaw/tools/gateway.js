@@ -256,7 +256,7 @@ export function createGatewayMcpServer() {
             }
             
             // Save to uploads directory
-            const workspacePath = path.join(os.homedir(), 'secure-openclaw')
+            const workspacePath = path.join(os.homedir(), 'oh-my-claw')
             const uploadsDir = path.join(workspacePath, 'uploads')
             if (!fs.existsSync(uploadsDir)) {
               fs.mkdirSync(uploadsDir, { recursive: true })

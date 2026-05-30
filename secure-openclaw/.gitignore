@@ -150,6 +150,7 @@ MEMORY.md
 /memory/*.md
 /memory/*.json
 /memory/*.jsonl
+.oh-my-claw/
 
 # Local MCP config
 mcp-servers.json

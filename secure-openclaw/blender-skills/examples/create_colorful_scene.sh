@@ -3,7 +3,7 @@
 # Example: Create a colorful scene with multiple objects
 # This demonstrates how to chain Blender commands together
 
-WRAPPER="$HOME/secure-openclaw/blender-skills/blender_wrapper.sh"
+WRAPPER="$HOME/oh-my-claw/blender-skills/blender_wrapper.sh"
 
 echo "Creating a colorful scene in Blender..."
 

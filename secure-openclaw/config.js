@@ -9,15 +9,15 @@ const parseList = (env) => env ? env.split(',').map(s => s.trim()).filter(Boolea
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const WORKSPACE = process.env.WORKSPACE_DIR || __dirname
 
-// Propagate to SECURE_OPENCLAW_WORKSPACE so modules like memory/manager.js
-// that read it at import time see the same workspace. config.js is imported
-// before those modules, so this assignment wins.
-if (!process.env.SECURE_OPENCLAW_WORKSPACE) {
-  process.env.SECURE_OPENCLAW_WORKSPACE = WORKSPACE
+// Propagate to OH_MY_CLAW_WORKSPACE so modules like memory/manager.js that read
+// it at import time see the same workspace. Keep the old env var as a
+// compatibility alias for existing local setups.
+if (!process.env.OH_MY_CLAW_WORKSPACE) {
+  process.env.OH_MY_CLAW_WORKSPACE = process.env.SECURE_OPENCLAW_WORKSPACE || WORKSPACE
 }
 
 export default {
-  agentId: 'secure-openclaw',
+  agentId: 'oh-my-claw',
   workspace: WORKSPACE,
 
   whatsapp: {

@@ -7,7 +7,7 @@ export function buildSystemPrompt(params) {
     sessionInfo,
     cronInfo,
     providerName = 'claude',
-    workspace = '~/secure-openclaw',
+    workspace = '~/oh-my-claw',
     toolCount = 0
   } = params
 
@@ -205,9 +205,9 @@ When the user says things like "can I text you on WhatsApp?" or "I'm going outsi
 - This means they want to continue the conversation on WhatsApp
 - You need to START the Oh My Claw gateway so you can receive WhatsApp messages
 - Run this command to start the gateway in the background:
-  \`cd ~/secure-openclaw && npm start > /tmp/secure-openclaw.log 2>&1 &\`
+  \`cd ~/oh-my-claw && npm start > /tmp/oh-my-claw.log 2>&1 &\`
 - After starting, confirm: "Gateway started! You can message me on WhatsApp now."
-- The gateway will show a QR code in the logs if WhatsApp needs to be connected - tell the user to check /tmp/secure-openclaw.log if needed
+- The gateway will show a QR code in the logs if WhatsApp needs to be connected - tell the user to check /tmp/oh-my-claw.log if needed
 `
 
   prompt += `

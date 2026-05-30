@@ -30,14 +30,14 @@ The Blender Control Skills allow you to:
    ```
 
 2. **Configure Blender Path** (if different from default)
-   Edit `~/secure-openclaw/blender-skills/blender_wrapper.sh` and update:
+   Edit `~/oh-my-claw/blender-skills/blender_wrapper.sh` and update:
    ```bash
    BLENDER_PATH="/path/to/your/Blender"
    ```
 
 3. **Test the Installation**
    ```bash
-   ~/secure-openclaw/blender-skills/blender_wrapper.sh list_objects
+   ~/oh-my-claw/blender-skills/blender_wrapper.sh list_objects
    ```
 
 ## Architecture
@@ -70,18 +70,18 @@ Documentation defining available skills:
 
 ```bash
 # Get scene information
-~/secure-openclaw/blender-skills/blender_wrapper.sh get_scene_info
+~/oh-my-claw/blender-skills/blender_wrapper.sh get_scene_info
 
 # Create a cube
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
   '{"obj_type": "CUBE", "name": "MyCube", "location": [0, 0, 0]}'
 
 # Transform an object
-~/secure-openclaw/blender-skills/blender_wrapper.sh transform_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh transform_object \
   '{"name": "MyCube", "location": [5, 0, 0], "scale": [2, 2, 2]}'
 
 # Render scene
-~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene \
+~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene \
   '{"output_path": "/tmp/render.png"}'
 ```
 
@@ -120,26 +120,26 @@ See [SKILLS.md](SKILLS.md) for detailed documentation.
 
 ```bash
 # Create a cube
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
   '{"obj_type": "CUBE", "name": "Box", "location": [0, 0, 0]}'
 
 # Add red material
-~/secure-openclaw/blender-skills/blender_wrapper.sh add_material \
+~/oh-my-claw/blender-skills/blender_wrapper.sh add_material \
   '{"obj_name": "Box", "material_name": "Red", "color": [1.0, 0.0, 0.0]}'
 
 # Create a light
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
   '{"obj_type": "LIGHT", "name": "MainLight", "location": [5, -5, 5]}'
 
 # Create and position camera
-~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
   '{"obj_type": "CAMERA", "name": "Camera", "location": [7, -7, 5]}'
 
-~/secure-openclaw/blender-skills/blender_wrapper.sh set_camera_view \
+~/oh-my-claw/blender-skills/blender_wrapper.sh set_camera_view \
   '{"location": [7, -7, 5], "rotation": [1.1, 0, 0.8]}'
 
 # Render
-~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene \
+~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene \
   '{"output_path": "/tmp/my_scene.png"}'
 ```
 
@@ -149,7 +149,7 @@ See [SKILLS.md](SKILLS.md) for detailed documentation.
 # Create a grid of cubes
 for x in {0..4}; do
   for y in {0..4}; do
-    ~/secure-openclaw/blender-skills/blender_wrapper.sh create_object \
+    ~/oh-my-claw/blender-skills/blender_wrapper.sh create_object \
       "{\"obj_type\": \"CUBE\", \"name\": \"Cube_${x}_${y}\", \"location\": [$x, $y, 0]}"
   done
 done
@@ -161,10 +161,10 @@ done
 # Render animation frames with moving object
 for frame in {0..10}; do
   x=$((frame * 2))
-  ~/secure-openclaw/blender-skills/blender_wrapper.sh transform_object \
+  ~/oh-my-claw/blender-skills/blender_wrapper.sh transform_object \
     "{\"name\": \"Cube\", \"location\": [$x, 0, 0]}"
 
-  ~/secure-openclaw/blender-skills/blender_wrapper.sh render_scene \
+  ~/oh-my-claw/blender-skills/blender_wrapper.sh render_scene \
     "{\"output_path\": \"/tmp/frame_$(printf %04d $frame).png\"}"
 done
 ```
@@ -195,7 +195,7 @@ For more interactive control with a running Blender instance:
 - Verify with: `which blender` or check your Applications folder
 
 ### Permission denied
-- Make wrapper executable: `chmod +x ~/secure-openclaw/blender-skills/blender_wrapper.sh`
+- Make wrapper executable: `chmod +x ~/oh-my-claw/blender-skills/blender_wrapper.sh`
 
 ### Command errors
 - Check JSON syntax (use single quotes around JSON, double quotes inside)

@@ -2,7 +2,7 @@
 
 ## What I've Done For You ✅
 
-1. **Downloaded addon.py** → Saved to `~/secure-openclaw/blender-skills/mcp-addon/addon.py`
+1. **Downloaded addon.py** → Saved to `~/oh-my-claw/blender-skills/mcp-addon/addon.py`
 2. **Verified UV is installed** → Version 0.9.7 (already installed)
 3. **Configured Claude Desktop** → Added blender-mcp to `claude_desktop_config.json`
 
@@ -21,7 +21,7 @@
 
 4. **Install the Addon**
    - Click the `Install...` button (top right)
-   - Navigate to: `~/secure-openclaw/blender-skills/mcp-addon/addon.py`
+   - Navigate to: `~/oh-my-claw/blender-skills/mcp-addon/addon.py`
    - Select the file and click `Install Add-on`
 
 5. **Enable the Addon**
@@ -84,7 +84,7 @@ Once everything is set up, you can test it by asking me:
 
 ## File Locations
 
-- **Addon file**: `~/secure-openclaw/blender-skills/mcp-addon/addon.py`
+- **Addon file**: `~/oh-my-claw/blender-skills/mcp-addon/addon.py`
 - **Claude config**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **MCP server port**: 9876
 
