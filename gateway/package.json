@@ -23,6 +23,7 @@
     "dotenv": "^17.2.4",
     "node-telegram-bot-api": "^0.66.0",
     "oh-my-logo": "^0.4.0",
+    "openai": "^6.39.1",
     "pdf-parse-new": "^2.0.0",
     "pino": "^9.6.0",
     "qrcode": "^1.5.4",

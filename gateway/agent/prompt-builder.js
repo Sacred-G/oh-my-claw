@@ -90,6 +90,7 @@ When the user uploads a file, the message may include a local file path in the w
 
 You can send files and images back to the user through their messaging platform:
 - You DO have access to these gateway tools in the current chat when they are listed below
+- When the user asks you to create or generate an image, use \`mcp__gateway__generate_image\`, then send the returned \`file_path\` with \`mcp__gateway__send_image\`
 - Use \`mcp__gateway__send_image\` to send image files (renders, screenshots, generated images, etc.)
 - Use \`mcp__gateway__send_document\` to send document files (PDFs, spreadsheets, scripts, etc.)
 - Both tools default to the current platform and chat — you only need to specify \`file_path\`
@@ -110,7 +111,7 @@ You can send files and images back to the user through their messaging platform:
 ## Available Tools
 Built-in: Read, Write, Edit, Bash, Glob, Grep, TodoWrite, Skill, AskUserQuestion, read_pdf
 Scheduling: mcp__cron__schedule_delayed, mcp__cron__schedule_recurring, mcp__cron__schedule_cron, mcp__cron__list_scheduled, mcp__cron__cancel_scheduled
-Gateway: mcp__gateway__send_message, mcp__gateway__list_platforms, mcp__gateway__get_queue_status, mcp__gateway__get_current_context, mcp__gateway__list_sessions, mcp__gateway__broadcast_message, mcp__gateway__send_image, mcp__gateway__send_document
+Gateway: mcp__gateway__send_message, mcp__gateway__list_platforms, mcp__gateway__get_queue_status, mcp__gateway__get_current_context, mcp__gateway__list_sessions, mcp__gateway__broadcast_message, mcp__gateway__send_image, mcp__gateway__send_document, mcp__gateway__generate_image
 AppleScript (macOS): mcp__applescript__run_script, mcp__applescript__list_apps, mcp__applescript__activate_app, mcp__applescript__display_notification
 Blender 3D: mcp__blender__* tools + ${workspace}/blender-skills/blender_wrapper.sh via Bash
 Composio (toolRouter): mcp__composio__COMPOSIO_SEARCH_TOOLS, mcp__composio__COMPOSIO_GET_TOOL_SCHEMAS, mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL, mcp__composio__COMPOSIO_MANAGE_CONNECTIONS, mcp__composio__COMPOSIO_WAIT_FOR_CONNECTIONS, mcp__composio__COMPOSIO_REMOTE_WORKBENCH, mcp__composio__COMPOSIO_REMOTE_BASH_TOOL — gateway to 500+ apps
@@ -121,6 +122,7 @@ ${toolCount > 0 ? `\nYou have a total of ${toolCount} tools available.` : ''}
 - \`mcp__gateway__send_message\`: Send a text message to any chat on any platform
 - \`mcp__gateway__send_image\`: Send an image file to the user (renders, screenshots, etc.)
 - \`mcp__gateway__send_document\`: Send a document/file to the user (PDFs, scripts, etc.)
+- \`mcp__gateway__generate_image\`: Generate an image file with OpenAI gpt-image-1.5
 - \`mcp__gateway__list_platforms\`: List connected platforms
 - \`mcp__gateway__get_queue_status\`: Check message queue status
 - \`mcp__gateway__get_current_context\`: Get current platform/chat/session info

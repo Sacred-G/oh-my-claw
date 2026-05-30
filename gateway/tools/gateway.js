@@ -1,9 +1,6 @@
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
-import fs from 'fs'
-import path from 'path'
-import os from 'os'
-import OpenAI from 'openai'
+import { generateImage } from './image-generation.js'
 
 /**
  * Gateway context - set by gateway before agent runs
@@ -181,10 +178,10 @@ export function createGatewayMcpServer() {
 
       tool(
         'send_image',
-        'Send a local image file to a chat',
+        'Send a local image file to the current chat or a specific chat',
         {
-          platform: z.enum(['whatsapp', 'imessage', 'telegram', 'signal']).describe('The messaging platform'),
-          chat_id: z.string().describe('The chat ID'),
+          platform: z.enum(['whatsapp', 'imessage', 'telegram', 'signal']).optional().describe('The messaging platform. Defaults to the current platform.'),
+          chat_id: z.string().optional().describe('The chat ID. Defaults to the current chat.'),
           image_path: z.string().describe('Absolute path to the image file'),
           caption: z.string().optional().describe('Optional caption for the image')
         },
@@ -192,12 +189,19 @@ export function createGatewayMcpServer() {
           const { gateway } = gatewayContext
           if (!gateway) return { success: false, error: 'Gateway not available' }
           
-          const adapter = gateway.adapters.get(platform)
-          if (!adapter) return { success: false, error: `Platform ${platform} not connected` }
+          const targetPlatform = platform || gatewayContext.currentPlatform
+          const targetChatId = chat_id || gatewayContext.currentChatId
+          if (!targetPlatform || !targetChatId) {
+            return { success: false, error: 'No target platform/chat available' }
+          }
+
+          const adapter = gateway.adapters.get(targetPlatform)
+          if (!adapter) return { success: false, error: `Platform ${targetPlatform} not connected` }
+          if (!adapter.sendImage) return { success: false, error: `Platform ${targetPlatform} does not support sending images` }
           
           try {
-            await adapter.sendImage(chat_id, image_path, caption)
-            return { success: true, platform, chat_id, image_path }
+            await adapter.sendImage(targetChatId, image_path, caption)
+            return { success: true, platform: targetPlatform, chat_id: targetChatId, image_path }
           } catch (err) {
             return { success: false, error: err.message }
           }
@@ -231,42 +235,22 @@ export function createGatewayMcpServer() {
 
       tool(
         'generate_image',
-        'Generate an image based on a prompt and save it locally to the server. Returns the absolute file path, which can then be used with send_image.',
+        'Generate an image with OpenAI gpt-image-1.5 and save it locally. Returns an absolute file path that can be sent with send_image.',
         {
           prompt: z.string().describe('The text prompt for image generation'),
-          size: z.string().optional().default('1024x1024').describe('The size of the generated image')
+          size: z.enum(['auto', '1024x1024', '1024x1536', '1536x1024']).optional().default('1024x1024').describe('The generated image size'),
+          quality: z.enum(['auto', 'low', 'medium', 'high']).optional().default('auto').describe('The generated image quality')
         },
-        async ({ prompt, size }) => {
+        async ({ prompt, size, quality }) => {
+          const { currentPlatform, currentChatId, currentSessionKey } = gatewayContext
           try {
-            const openai = new OpenAI({
-              apiKey: process.env.OPENAI_API_KEY
-            })
-            
-            // Using gpt-image-1.5 as requested
-            const response = await openai.images.generate({
-              model: 'gpt-image-1.5',
+            return await generateImage({
               prompt,
               size,
-              response_format: 'b64_json'
+              quality,
+              platform: currentPlatform || 'generated',
+              chatId: currentChatId || currentSessionKey || 'generated'
             })
-            
-            const b64Data = response.data[0].b64_json
-            if (!b64Data) {
-              return { success: false, error: 'No image data returned from API' }
-            }
-            
-            // Save to uploads directory
-            const workspacePath = path.join(os.homedir(), 'oh-my-claw')
-            const uploadsDir = path.join(workspacePath, 'uploads')
-            if (!fs.existsSync(uploadsDir)) {
-              fs.mkdirSync(uploadsDir, { recursive: true })
-            }
-            
-            const filename = `generated_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.png`
-            const filepath = path.join(uploadsDir, filename)
-            fs.writeFileSync(filepath, Buffer.from(b64Data, 'base64'))
-            
-            return { success: true, filepath, prompt }
           } catch (err) {
             return { success: false, error: err.message }
           }

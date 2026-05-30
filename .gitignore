@@ -13,6 +13,7 @@ npm-debug.log*
 # Runtime / local state
 gateway/uploads/
 gateway/auth_whatsapp/
+gateway/auth_whatsapp.*/
 gateway/transcripts/*.jsonl
 gateway/memory/*.md
 gateway/memory/*.json

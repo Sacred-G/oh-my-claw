@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import { EventEmitter } from 'events'
 import { getScheduler, setContext as setCronContext } from '../tools/cron.js'
 import { setGatewayContext, getGatewayContext } from '../tools/gateway.js'
+import { generateImage } from '../tools/image-generation.js'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import fs from 'fs'
@@ -456,7 +457,44 @@ export default class McpBridge extends EventEmitter {
       }
     })
 
-    console.log('[McpBridge] Registered 8 gateway tools')
+    this.registerTool('mcp__gateway__generate_image', {
+      source: 'local:gateway',
+      schema: {
+        name: 'mcp__gateway__generate_image',
+        description: 'Generate an image with OpenAI gpt-image-1.5 and save it locally. Use mcp__gateway__send_image with the returned file_path to send it to the user.',
+        parameters: {
+          type: 'object',
+          properties: {
+            prompt: { type: 'string', description: 'The image prompt to generate' },
+            size: {
+              type: 'string',
+              enum: ['auto', '1024x1024', '1024x1536', '1536x1024'],
+              description: 'The generated image size',
+              default: '1024x1024'
+            },
+            quality: {
+              type: 'string',
+              enum: ['auto', 'low', 'medium', 'high'],
+              description: 'The generated image quality',
+              default: 'auto'
+            }
+          },
+          required: ['prompt']
+        }
+      },
+      handler: async (args) => {
+        const ctx = getGatewayContext()
+        return generateImage({
+          prompt: args.prompt,
+          size: args.size || '1024x1024',
+          quality: args.quality || 'auto',
+          platform: ctx.currentPlatform || 'generated',
+          chatId: ctx.currentChatId || ctx.currentSessionKey || 'generated'
+        })
+      }
+    })
+
+    console.log('[McpBridge] Registered 9 gateway tools')
   }
 
   registerAppleScriptTools() {
