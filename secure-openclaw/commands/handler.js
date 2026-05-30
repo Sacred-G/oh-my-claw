@@ -1,7 +1,7 @@
 import { getProvider, getAvailableProviders } from '../providers/index.js'
 
 /**
- * Slash command handler for Secure OpenClaw
+ * Slash command handler for Oh My Claw
  * Processes commands like /new, /reset, /status, /memory, /model, /provider
  */
 export default class CommandHandler {

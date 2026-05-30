@@ -20,7 +20,7 @@ export default function DashboardPage() {
       <div className="flex h-[calc(100vh-10rem)] flex-col items-center justify-center gap-4 text-center">
         <p className="text-destructive font-medium">Failed to connect to gateway</p>
         <p className="text-sm text-muted-foreground max-w-sm">
-          Make sure the secure-openclaw gateway is running on {process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001"}.
+          Make sure the Oh My Claw gateway is running on {process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:4096"}.
         </p>
       </div>
     )

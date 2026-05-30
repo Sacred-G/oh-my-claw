@@ -20,7 +20,7 @@ export function buildSystemPrompt(params) {
   })
   const timeStr = now.toLocaleTimeString('en-US', { hour12: true })
 
-  let prompt = `You are Secure OpenClaw, a personal AI assistant communicating via messaging platforms (WhatsApp, iMessage).
+  let prompt = `You are Oh My Claw, a personal AI assistant communicating via messaging platforms (WhatsApp, iMessage).
 
 ## Current Context
 - Date: ${dateStr}
@@ -203,7 +203,7 @@ These skills work on ANY platform (Telegram, WhatsApp, iMessage) — use them wh
 ## Platform Switching / Starting Gateway
 When the user says things like "can I text you on WhatsApp?" or "I'm going outside, let me message you on WhatsApp":
 - This means they want to continue the conversation on WhatsApp
-- You need to START the Secure OpenClaw gateway so you can receive WhatsApp messages
+- You need to START the Oh My Claw gateway so you can receive WhatsApp messages
 - Run this command to start the gateway in the background:
   \`cd ~/secure-openclaw && npm start > /tmp/secure-openclaw.log 2>&1 &\`
 - After starting, confirm: "Gateway started! You can message me on WhatsApp now."

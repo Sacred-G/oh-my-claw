@@ -1,41 +1,64 @@
 <p align="center">
-  <img src="assets/openclaw-logo.svg" alt="Oh My Claw - Secure OpenClaw agent gateway" width="760">
+  <img src="assets/openclaw-logo.svg" alt="Oh My Claw agent gateway" width="760">
 </p>
 
 <p align="center">
   <a href="secure-openclaw/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-MIT-111827"></a>
   <img alt="Node.js" src="https://img.shields.io/badge/node-18%2B-22c55e">
-  <img alt="Runtime" src="https://img.shields.io/badge/runtime-Node.js-38bdf8">
-  <img alt="Providers" src="https://img.shields.io/badge/providers-Claude%20%7C%20Opencode-f97316">
-  <img alt="MCP" src="https://img.shields.io/badge/tools-MCP%20%2B%20Composio-8b5cf6">
+  <img alt="Gateway" src="https://img.shields.io/badge/gateway-Node.js-38bdf8">
+  <img alt="Dashboard" src="https://img.shields.io/badge/dashboard-Next.js-000000">
+  <img alt="Providers" src="https://img.shields.io/badge/providers-Claude%20%7C%20Opencode%20%7C%20OpenAI-f97316">
 </p>
 
 # Oh My Claw
 
-Oh My Claw is a secure, local-first agent gateway built around `secure-openclaw`. It lets one assistant respond across messaging channels while sharing the same provider runtime, memory, tool registry, scheduling system, file sending tools, and app integrations.
+Oh My Claw is currently a local-first personal agent gateway built around
+`secure-openclaw`. It connects messaging channels to one shared agent runtime
+with providers, memory files, MCP-style tools, scheduling, uploads, Composio
+integrations, and a Next.js dashboard.
 
-This repository is not a generic chatbot demo. The useful part is the gateway architecture: channel adapters normalize messages, the agent runner handles queueing and provider execution, and tools are exposed through a controlled MCP bridge.
+This repository is **not yet** the production-grade cognitive runtime described
+in the project instructions. The current implementation is a working Node.js
+gateway. The target architecture is stricter: channels should be dumb I/O, and
+all reasoning, tools, memory, approvals, audit, and workflow behavior should
+eventually move behind a core-authoritative runtime.
 
-> Security note: this repository is public. Keep `.env`, local memory, messaging sessions, Composio auth config, MCP server secrets, uploads, and transcripts out of Git.
+## Current Status
 
-## What It Does
+Implemented now:
 
-- Runs a personal assistant over WhatsApp, Telegram, Signal, iMessage, or terminal chat.
-- Supports Claude Agent SDK and Opencode as interchangeable providers.
-- Bridges built-in gateway tools, scheduling tools, AppleScript tools, external MCP servers, and Composio app integrations.
-- Stores persistent memory in local workspace files.
-- Sends images and documents back through connected messaging platforms.
-- Includes queue/session handling and permission surfaces for controlling tool access.
-- Supports guest Telegram users with a smaller tool surface.
-- Includes Docker deployment assets for remote gateway hosting.
+- Node.js gateway in `secure-openclaw/gateway.js`.
+- Messaging adapters for WhatsApp, Telegram, Signal, and iMessage.
+- Terminal CLI in `secure-openclaw/cli.js`.
+- Provider layer for Claude Agent SDK, Opencode, and OpenAI.
+- File-backed memory through `secure-openclaw/memory/manager.js`.
+- MCP bridge and built-in tools for gateway messaging, cron, AppleScript, file
+  access, uploads, PDFs, and Composio.
+- Queue/session handling through `secure-openclaw/agent/runner.js` and
+  `secure-openclaw/sessions/manager.js`.
+- Next.js dashboard in `secure-openclaw/ui`.
+- Docker Compose deployment for the gateway.
+
+Not implemented yet:
+
+- SvelteKit app shell.
+- `IncomingTurn` / `runTurn` / `dispatchTool` core boundary.
+- Postgres, Drizzle, Redis, pgvector, persisted approvals, or audit event
+  storage.
+- Phase 2 web text channel SSE endpoint with approval replay.
+- Tests for dispatch gating, memory isolation, duplicate skip, and supersede
+  behavior.
+
+The README intentionally documents the live project instead of promising the
+future Phase 2 slice.
 
 ## Architecture
 
 ```text
-Messaging app / terminal
+Messaging app / terminal / dashboard proxy
         |
         v
-Channel adapter
+Channel adapter or gateway HTTP endpoint
         |
         v
 Gateway queue
@@ -43,13 +66,22 @@ Gateway queue
         v
 Agent runner
         |
-        +--> Provider: Claude Agent SDK or Opencode
-        +--> MCP bridge: gateway, cron, AppleScript, Composio, external MCP
-        +--> Memory manager
+        +--> Provider: Claude Agent SDK, Opencode, or OpenAI
+        +--> MCP bridge / built-in tools
+        +--> File-backed memory manager
         +--> Session manager
+        +--> Cron scheduler
 ```
 
-The important boundary is that channels should stay thin. Platform-specific code belongs in adapters; tool access, memory, provider execution, queueing, and session behavior belong in the shared runtime.
+The current code keeps most shared behavior in the gateway and agent runner,
+but it does not yet enforce the desired Phase 2 trust boundary. In particular,
+there is no single `dispatchTool` gate or persisted approval system. Sensitive
+tools are allowed by the provider/tool configuration, and the gateway currently
+constructs the agent with `permissionMode: 'bypassPermissions'`.
+
+That is acceptable for a local personal gateway, but it is not the final
+production architecture. The next serious architecture milestone should be the
+Phase 2 vertical slice, not more channel breadth.
 
 ## Repository Layout
 
@@ -59,29 +91,43 @@ The important boundary is that channels should stay thin. Platform-specific code
 +-- assets/
 |   +-- openclaw-logo.svg
 +-- secure-openclaw/
-    +-- cli.js
-    +-- config.js
-    +-- gateway.js
+    +-- cli.js                    # interactive CLI and terminal chat
+    +-- config.js                 # gateway/provider/channel config
+    +-- gateway.js                # HTTP gateway and messaging adapter host
     +-- Dockerfile
     +-- docker-compose.yml
-    +-- adapters/
-    +-- agent/
-    +-- commands/
-    +-- memory/
-    +-- providers/
-    +-- sessions/
-    +-- tools/
-    +-- ui/
-    +-- skills-main/
+    +-- adapters/                 # WhatsApp, Telegram, Signal, iMessage
+    +-- agent/                    # runner, prompt builder, MCP bridge
+    +-- commands/                 # slash command handling
+    +-- memory/                   # file-backed memory manager
+    +-- providers/                # Claude, Opencode, OpenAI providers
+    +-- sessions/                 # session and transcript state
+    +-- tools/                    # gateway, cron, AppleScript, uploads, PDF
+    +-- ui/                       # Next.js dashboard
+    +-- skills-main/              # bundled/local agent skills
 ```
+
+## Requirements
+
+| Requirement | Purpose |
+| --- | --- |
+| Node.js 18+ | Gateway, CLI, and dashboard runtime |
+| npm | Dependency installation and scripts |
+| Anthropic API key or Claude auth | Claude provider |
+| Opencode | Optional alternative provider |
+| OpenAI API key | Optional OpenAI provider and transcription helper |
+| Composio API key | Optional app integrations and tool router |
+| Docker | Optional gateway deployment |
+| macOS | Required only for iMessage and AppleScript workflows |
 
 ## Quick Start
 
+Gateway:
+
 ```bash
-git clone https://github.com/Sacred-G/oh-my-claw.git
-cd oh-my-claw/secure-openclaw
+cd secure-openclaw
 npm install
-cp .env.example .env 2>/dev/null || touch .env
+touch .env
 npm run cli
 ```
 
@@ -94,19 +140,26 @@ npm run setup    # adapter setup wizard
 npm run cli      # interactive menu
 ```
 
-## Requirements
+Dashboard:
 
-| Requirement | Purpose |
-| --- | --- |
-| Node.js 18+ | Runtime for the gateway and CLI |
-| npm | Dependency installation and scripts |
-| Anthropic API key or Claude Code auth | Claude provider |
-| Opencode | Optional alternative provider |
-| Composio API key | Optional app integrations and tool router |
-| Docker | Optional remote deployment |
-| macOS | Required only for iMessage and AppleScript workflows |
+```bash
+cd secure-openclaw/ui
+npm install
+cp .env.example .env.local
+npm run dev
+```
 
-## Environment Options
+By default the dashboard expects a gateway URL through `GATEWAY_URL`. For a
+local gateway, set:
+
+```bash
+GATEWAY_URL=http://localhost:4096
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=replace-me
+ADMIN_PASSWORD=replace-me
+```
+
+## Environment
 
 Create `secure-openclaw/.env` locally. Do not commit it.
 
@@ -114,9 +167,11 @@ Create `secure-openclaw/.env` locally. Do not commit it.
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | For Claude provider | Anthropic API key for Claude execution |
 | `COMPOSIO_API_KEY` | For Composio | Enables Composio tool router sessions |
-| `OPENAI_API_KEY` | Optional | Used by voice transcription helper |
+| `OPENAI_API_KEY` | For OpenAI provider/transcription | OpenAI API key |
+| `OPENAI_BASE_URL` | Optional | Custom OpenAI-compatible endpoint |
+| `OPENAI_MODEL` | Optional | OpenAI model override |
 | `PORT` | Optional | Gateway HTTP port, defaults to `4096` |
-| `WORKSPACE_DIR` | Optional | Overrides the local workspace directory |
+| `WORKSPACE_DIR` | Optional | Overrides the project workspace directory |
 | `WHATSAPP_ALLOWED_DMS` | Optional | Comma-separated WhatsApp DM allowlist, or `*` |
 | `WHATSAPP_ALLOWED_GROUPS` | Optional | Comma-separated WhatsApp group allowlist, or `*` |
 | `TELEGRAM_BOT_TOKEN` | For Telegram | Bot token from BotFather |
@@ -128,16 +183,27 @@ Create `secure-openclaw/.env` locally. Do not commit it.
 | `SIGNAL_PHONE_NUMBER` | For Signal | Registered Signal phone number |
 | `SIGNAL_ALLOWED_DMS` | Optional | Signal DM allowlist |
 | `SIGNAL_ALLOWED_GROUPS` | Optional | Signal group allowlist |
-| `ADMIN_PASSWORD` | Optional | Dashboard password fallback |
+
+Create `secure-openclaw/ui/.env.local` for the dashboard:
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NEXTAUTH_SECRET` | Yes | Secret used by NextAuth |
+| `NEXTAUTH_URL` | Recommended | Dashboard URL |
+| `GATEWAY_URL` | Yes | Gateway base URL, usually `http://localhost:4096` |
+| `ADMIN_PASSWORD` | Recommended | Dashboard password. Defaults to `admin123` if unset |
 
 ## Providers
 
+Provider registration lives in `secure-openclaw/providers/index.js`.
+
 | Provider | Config value | Notes |
 | --- | --- | --- |
-| Claude Agent SDK | `claude` | Default provider. Uses the Anthropic/Claude agent tooling. |
-| Opencode | `opencode` | Local or self-managed provider runtime. Configured with host, port, and model. |
+| Claude Agent SDK | `claude` | Default provider in `config.js` |
+| Opencode | `opencode` | Uses configured host, port, and model |
+| OpenAI | `openai` | Uses Chat Completions and the MCP bridge |
 
-Provider configuration lives in `secure-openclaw/config.js`:
+Provider selection is currently configured in `secure-openclaw/config.js`:
 
 ```js
 agent: {
@@ -153,133 +219,85 @@ agent: {
 
 ## Channels
 
-| Channel | File | Status | Notes |
-| --- | --- | --- | --- |
-| Terminal | `cli.js` | Built in | Best for local testing and setup |
-| WhatsApp | `adapters/whatsapp.js` | Supported | Uses Baileys and QR authentication |
-| Telegram | `adapters/telegram.js` | Supported | Uses bot token and allowlists |
-| Signal | `adapters/signal.js` | Supported | Requires `signal-cli` |
-| iMessage | `adapters/imessage.js` | macOS only | Requires `imsg` and Messages.app |
+| Channel | File | Notes |
+| --- | --- | --- |
+| Terminal | `secure-openclaw/cli.js` | Best for local testing |
+| WhatsApp | `secure-openclaw/adapters/whatsapp.js` | Uses Baileys and QR authentication |
+| Telegram | `secure-openclaw/adapters/telegram.js` | Uses bot token and allowlists |
+| Signal | `secure-openclaw/adapters/signal.js` | Requires `signal-cli` |
+| iMessage | `secure-openclaw/adapters/imessage.js` | macOS only, requires `imsg` |
+| Dashboard | `secure-openclaw/ui` | Next.js app that proxies gateway HTTP APIs |
 
-Each channel has DM/group allowlists. Use `*` only when you intentionally want broad access.
+Each messaging channel has DM/group allowlists. Use `*` only when broad access
+is intentional.
+
+## Gateway HTTP API
+
+The gateway exposes lightweight HTTP endpoints for status, dashboard data, QR
+auth, and server-sent events:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /` | Gateway status |
+| `GET /qr` | WhatsApp QR page |
+| `GET /sessions` | List sessions |
+| `GET /sessions/:key` | Session details and transcript |
+| `POST /message` | Send a dashboard-originated message into the runner |
+| `GET /memory/long-term` | Read long-term memory |
+| `GET /memory/daily` | List daily memory files |
+| `GET /memory/search?q=...` | Search file-backed memory |
+| `POST /memory/update` | Update long-term or daily memory files |
+| `GET /integrations` | List connected Composio accounts |
+| `GET /integrations/available` | List Composio toolkits |
+| `GET /integrations/connect/:app` | Start a Composio connection |
+| `GET /config` | Return in-memory config |
+| `POST /config/update` | Update in-memory config only |
+| `GET /scheduling/jobs` | List cron jobs |
+| `GET /stats` | Dashboard stats |
+| `GET /events` | Gateway event stream |
+
+These are not the Phase 2 cognitive runtime endpoints. There is no
+`POST /api/channels/web` SSE route in the current gateway.
 
 ## Tool Surface
 
-### Built-in Agent Tools
+Configured host tools in `secure-openclaw/config.js` include:
 
-| Tool | Purpose |
-| --- | --- |
-| `Read` | Read files in the workspace |
-| `Write` | Write files |
-| `Edit` | Edit existing files |
-| `Bash` | Run shell commands |
-| `Glob` | Match files by pattern |
-| `Grep` | Search files |
-| `TodoWrite` | Track task progress |
-| `Skill` | Use installed agent skills |
-| `AskUserQuestion` | Ask structured follow-up questions |
-| `read_pdf` | Extract text from PDFs |
+- File and shell tools: `Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep`.
+- Agent utilities: `TodoWrite`, `Skill`, `AskUserQuestion`, `read_pdf`.
+- Gateway tools: send messages, images, and documents.
+- Composio tools through `mcp__composio`.
+- Cron and AppleScript tools are added by the agent runtime when available.
 
-### Gateway MCP Tools
+Guest Telegram users get a reduced tool list with no filesystem, shell, host
+memory, cron, or AppleScript access.
 
-| Tool | Purpose |
-| --- | --- |
-| `mcp__gateway__send_message` | Send a text message to a chat |
-| `mcp__gateway__send_image` | Send an image file |
-| `mcp__gateway__send_document` | Send a document or arbitrary file |
-| `mcp__gateway__list_platforms` | List connected platforms |
-| `mcp__gateway__get_current_context` | Inspect the active platform/chat/session |
-| `mcp__gateway__get_queue_status` | Inspect queue state |
-| `mcp__gateway__list_sessions` | List active sessions |
-| `mcp__gateway__broadcast_message` | Send a message to multiple sessions |
-
-### Scheduling MCP Tools
-
-| Tool | Purpose |
-| --- | --- |
-| `mcp__cron__schedule_delayed` | Schedule one delayed reminder |
-| `mcp__cron__schedule_recurring` | Schedule recurring reminders |
-| `mcp__cron__schedule_cron` | Schedule a cron expression |
-| `mcp__cron__list_scheduled` | List scheduled jobs |
-| `mcp__cron__cancel_scheduled` | Cancel scheduled jobs |
-
-### AppleScript MCP Tools
-
-| Tool | Purpose |
-| --- | --- |
-| `mcp__applescript__run_script` | Run AppleScript on macOS |
-| `mcp__applescript__list_apps` | List running apps |
-| `mcp__applescript__activate_app` | Bring an app forward |
-| `mcp__applescript__display_notification` | Show a macOS notification |
-
-### Composio Tool Router
-
-| Tool | Purpose |
-| --- | --- |
-| `mcp__composio__COMPOSIO_SEARCH_TOOLS` | Search available app tools |
-| `mcp__composio__COMPOSIO_GET_TOOL_SCHEMAS` | Fetch input schemas for tool slugs |
-| `mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL` | Execute one or more app tools |
-| `mcp__composio__COMPOSIO_MANAGE_CONNECTIONS` | Manage OAuth connections |
-| `mcp__composio__COMPOSIO_WAIT_FOR_CONNECTIONS` | Wait for connection authorization |
-| `mcp__composio__COMPOSIO_REMOTE_WORKBENCH` | Run remote Python data processing |
-| `mcp__composio__COMPOSIO_REMOTE_BASH_TOOL` | Run remote bash workflows |
-
-Typical connected app categories include email, calendar, docs, spreadsheets, GitHub, project management, CRM, messaging, storage, image/video services, and browser/workbench automation.
-
-### External MCP Servers
-
-Add local MCP server definitions in `secure-openclaw/mcp-servers.json`. This file is ignored by Git because it often contains machine-specific paths or secrets.
-
-## Tool Permissions
-
-Default tool set in `config.js`:
-
-```js
-allowedTools: [
-  'Read',
-  'Write',
-  'Edit',
-  'Bash',
-  'Glob',
-  'Grep',
-  'TodoWrite',
-  'Skill',
-  'AskUserQuestion',
-  'read_pdf',
-  'mcp__gateway__send_message',
-  'mcp__gateway__send_image',
-  'mcp__gateway__send_document',
-  'mcp__composio'
-]
-```
-
-Guest Telegram users get a reduced set:
-
-```js
-guestAllowedTools: [
-  'TodoWrite',
-  'AskUserQuestion',
-  'mcp__gateway__send_message',
-  'mcp__gateway__send_image',
-  'mcp__gateway__send_document',
-  'mcp__composio'
-]
-```
+External MCP server definitions can be added in
+`secure-openclaw/mcp-servers.json`. That file is ignored because it often
+contains local paths or secrets.
 
 ## Memory
 
-Memory lives in the local workspace and should not be committed.
+The current memory system is file-backed, not Postgres/vector-backed.
+
+Tracked source:
 
 ```text
-secure-openclaw/MEMORY.md        # optional local long-term memory
-secure-openclaw/memory/*.md      # daily/topic memory notes
+secure-openclaw/memory/manager.js
 ```
 
-Tracked source for the memory system lives at `secure-openclaw/memory/manager.js`.
+Runtime memory is local and ignored:
+
+```text
+secure-openclaw/MEMORY.md
+secure-openclaw/memory/*.md
+secure-openclaw/memory/*.json
+secure-openclaw/memory/*.jsonl
+```
 
 ## Deployment
 
-Local:
+Local gateway:
 
 ```bash
 cd secure-openclaw
@@ -287,7 +305,7 @@ npm install
 npm start
 ```
 
-Docker:
+Docker gateway:
 
 ```bash
 cd secure-openclaw
@@ -295,31 +313,12 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-For a small VPS, use Docker, set `.env`, expose the gateway `PORT`, and keep auth/session directories on persistent storage.
-
-## Private Files That Must Stay Local
-
-The repo is configured to ignore these by default:
-
-| Path | Why |
-| --- | --- |
-| `secure-openclaw/.env` | API keys and tokens |
-| `secure-openclaw/composio-toolkits.json` | Composio user/auth config |
-| `secure-openclaw/mcp-servers.json` | Local MCP paths and secrets |
-| `secure-openclaw/auth_whatsapp/` | WhatsApp session credentials |
-| `secure-openclaw/transcripts/*.jsonl` | Conversation logs |
-| `secure-openclaw/uploads/` | User files and generated files |
-| `secure-openclaw/memory/*.md` | Personal memory |
-| `secure-openclaw/.curated/`, `.system/`, local skill workspaces | Local skill cache and private skill drafts |
-
-Before pushing, run:
-
-```bash
-git status --short --untracked-files=all
-git diff --cached --check
-```
+Docker Compose reads `secure-openclaw/.env`, exposes port `4096`, and persists
+WhatsApp auth plus memory in Docker volumes.
 
 ## Development Commands
+
+Gateway:
 
 | Command | Description |
 | --- | --- |
@@ -329,45 +328,64 @@ git diff --cached --check
 | `npm run setup` | Run setup wizard |
 | `npm run skills:manifest` | Rebuild the skills manifest |
 | `node --check gateway.js` | Syntax-check gateway entry |
-| `node --check agent/prompt-builder.js` | Syntax-check prompt builder |
 
-## Self-Improvement
+Dashboard:
 
-One notable feature: the agent can modify its own code, add new capabilities, and restart itself to deploy updates.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start Next.js dev server |
+| `npm run build` | Build the dashboard |
+| `npm run start` | Start the built dashboard |
+| `npm run lint` | Run ESLint |
 
-**Self-Improvement Capabilities:**
-- Modify agent logic, skills, and configurations
-- Add new MCP server integrations
-- Create and install new skills using the skill-creator system
-- Improve memory system
-- Enhance communication handling
-- Deploy updates and restart itself if needed
+## Private Files
 
-**What It Can Improve:**
-- Agent core logic (message handling, routing, context)
-- Skills and capabilities (Blender, PDF generation, etc.)
-- Memory and learning systems
-- Platform integrations (WhatsApp, Telegram, etc.)
-- Tool wrappers and automation scripts
-- Documentation and self-knowledge
+Keep these local:
 
-**Safeguards:**
-- Explains changes before making them
-- Tests in isolated areas first
-- Keeps backups or uses Git commits
-- Gets approval for major architectural changes
+| Path | Why |
+| --- | --- |
+| `secure-openclaw/.env` | API keys and tokens |
+| `secure-openclaw/ui/.env.local` | Dashboard secrets |
+| `secure-openclaw/composio-toolkits.json` | Composio user/auth config |
+| `secure-openclaw/mcp-servers.json` | Local MCP paths and secrets |
+| `secure-openclaw/auth_whatsapp/` | WhatsApp credentials |
+| `secure-openclaw/transcripts/*.jsonl` | Conversation logs |
+| `secure-openclaw/uploads/` | User files and generated files |
+| `secure-openclaw/memory/*.md` | Personal memory |
+| `secure-openclaw/.curated/`, `.system/`, local skill workspaces | Local skill cache and private drafts |
 
-The agent can literally read its own code, identify improvements, implement them, test them, and deploy them.
+Before pushing:
 
-## Current Status
+```bash
+git status --short --untracked-files=all
+git diff --cached --check
+```
 
-This is an active personal agent gateway, not a polished SaaS product. The next production-grade improvements should be:
+## Recommended Next Phase
 
-- Add automated tests around adapter normalization, provider routing, MCP bridge behavior, and guest permissions.
-- Move sensitive tool execution behind an explicit risk policy and audit log.
-- Add first-class dashboard auth instead of relying on a fallback password.
-- Document deployment hardening for firewalls, process supervision, backups, and secret rotation.
-- Keep channel adapters thin as additional surfaces are added.
+Do not add more channel-specific intelligence yet. The highest-value next step
+is to build a real Phase 2 vertical slice in a clean core runtime:
+
+```text
+web text channel
+  -> IncomingTurn
+  -> runTurn
+  -> dispatchTool
+  -> approval policy
+  -> memory service
+  -> audit log
+  -> dashboard UI
+```
+
+The production target should include:
+
+- A framework-light core where `tool.execute()` is reachable only through
+  `dispatchTool`.
+- Zod validation on all server inputs.
+- Persisted pending approvals and atomic approve/reject replay.
+- Duplicate/conflict memory behavior with superseded rows preserved.
+- Audit events for every meaningful action.
+- Focused tests before adding provider breadth or voice.
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "secure-openclaw",
   "version": "1.0.0",
-  "description": "Secure OpenClaw gateway - WhatsApp, Telegram, Signal, iMessage adapters with Claude agent runtime",
+  "description": "Oh My Claw gateway - WhatsApp, Telegram, Signal, iMessage adapters with Claude agent runtime",
   "type": "module",
   "main": "gateway.js",
   "bin": {

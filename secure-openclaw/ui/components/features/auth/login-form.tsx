@@ -69,7 +69,7 @@ export function LoginForm() {
       <CardHeader>
         <CardTitle className="text-2xl">Login</CardTitle>
         <CardDescription>
-          Enter your password to access the Secure OpenClaw dashboard.
+          Enter your password to access the Oh My Claw dashboard.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>

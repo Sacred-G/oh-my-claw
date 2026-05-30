@@ -1,6 +1,6 @@
-# Blender Control Skills for Secure OpenClaw
+# Blender Control Skills for Oh My Claw
 
-This package provides AI-powered control of Blender 3D through natural language commands via the Secure OpenClaw agent system.
+This package provides AI-powered control of Blender 3D through natural language commands via the Oh My Claw agent system.
 
 ## Overview
 
@@ -85,7 +85,7 @@ Documentation defining available skills:
   '{"output_path": "/tmp/render.png"}'
 ```
 
-### Through Secure OpenClaw Agent
+### Through Oh My Claw Agent
 
 Just ask in natural language:
 
@@ -278,7 +278,7 @@ To add new skills:
 
 ## License
 
-This project is part of Secure OpenClaw and follows the same license.
+This project is part of Oh My Claw and follows the same license.
 
 ## Credits
 

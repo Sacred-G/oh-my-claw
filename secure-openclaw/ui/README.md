@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Oh My Claw Dashboard
 
-## Getting Started
+This is the Next.js dashboard for the Oh My Claw gateway. It is not the agent
+runtime. The dashboard authenticates an operator, proxies requests to the
+gateway HTTP API, and renders gateway status, sessions, memory, scheduling,
+integrations, and configuration screens.
 
-First, run the development server:
+## Install
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Required:
 
-## Learn More
+```bash
+NEXTAUTH_SECRET=replace-me
+GATEWAY_URL=http://localhost:4096
+```
 
-To learn more about Next.js, take a look at the following resources:
+Recommended:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+NEXTAUTH_URL=http://localhost:3000
+ADMIN_PASSWORD=replace-me
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+If `ADMIN_PASSWORD` is unset, `auth.ts` falls back to `admin123`. That is only
+acceptable for local development.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start Next.js dev server |
+| `npm run build` | Build for production |
+| `npm run start` | Start a production build |
+| `npm run lint` | Run ESLint |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Shape
+
+```text
+app/
+  (dashboard)/dashboard/        dashboard pages
+  api/auth/[...nextauth]/       NextAuth route
+  api/proxy/                    authenticated gateway proxy routes
+components/
+  features/                     app-specific UI
+  providers/                    React Query and theme providers
+  shared/                       layout components
+  ui/                           shadcn-style components
+lib/
+  api/                          API client
+  hooks/                        React Query hooks
+  env.ts                        server env validation
+```
+
+## Gateway Contract
+
+The UI talks to the gateway through `GATEWAY_URL`. Local development normally
+uses:
+
+```bash
+GATEWAY_URL=http://localhost:4096
+```
+
+The dashboard currently depends on the gateway endpoints documented in
+`../README.md`: status, sessions, memory, scheduling, integrations, config,
+stats, message, and events.
+
+This dashboard does not yet implement the Phase 2 approval/audit UI described
+in the broader project instructions because the backend approval/audit runtime
+does not exist in this package yet.

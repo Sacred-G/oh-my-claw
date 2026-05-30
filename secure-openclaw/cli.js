@@ -182,7 +182,7 @@ async function changeProvider() {
 }
 
 async function startGateway() {
-  print('\n🚀 Starting Secure OpenClaw Gateway...\n', colors.green)
+  print('\n🚀 Starting Oh My Claw Gateway...\n', colors.green)
   rl.close()
 
   // Dynamic import to start the gateway
@@ -1186,7 +1186,7 @@ if (args.length === 0) {
       break
 
     case 'start':
-      print('\n🚀 Starting Secure OpenClaw Gateway...\n', colors.green)
+      print('\n🚀 Starting Oh My Claw Gateway...\n', colors.green)
       import('./gateway.js')
       break
 

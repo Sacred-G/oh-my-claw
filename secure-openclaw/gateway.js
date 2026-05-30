@@ -16,7 +16,7 @@ import { Composio } from '@composio/client'
 import { cleanupOldUploads, UPLOAD_LIMITS } from './tools/uploads.js'
 
 /**
- * Secure OpenClaw Gateway - Routes messages between messaging platforms and Claude agent
+ * Oh My Claw Gateway - Routes messages between messaging platforms and Claude agent
  */
 class Gateway {
   constructor() {
@@ -290,7 +290,7 @@ class Gateway {
 
   async start() {
     console.log('='.repeat(50))
-    console.log('Secure OpenClaw Gateway Starting')
+    console.log('Oh My Claw Gateway Starting')
     console.log('='.repeat(50))
     console.log(`Agent ID: ${config.agentId}`)
     console.log(`Workspace: ~/secure-openclaw/`)

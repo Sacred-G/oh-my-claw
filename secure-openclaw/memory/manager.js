@@ -6,7 +6,7 @@ const WORKSPACE = process.env.SECURE_OPENCLAW_WORKSPACE || path.join(os.homedir(
 const MEMORY_DIR = path.join(WORKSPACE, 'memory')
 
 /**
- * Memory Manager for Secure OpenClaw
+ * Memory Manager for Oh My Claw
  * Handles daily logs and curated long-term memory
  */
 export default class MemoryManager {

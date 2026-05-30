@@ -9,7 +9,7 @@ fi
 
 # Prompt for required keys
 echo ""
-echo "=== Secure OpenClaw Setup ==="
+echo "=== Oh My Claw Setup ==="
 echo ""
 
 if [ ! -f .env ]; then

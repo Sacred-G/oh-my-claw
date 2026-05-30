@@ -1,6 +1,6 @@
 # Blender Skills - Agent Integration Guide
 
-This guide explains how the Secure OpenClaw agent should use the Blender control skills.
+This guide explains how the Oh My Claw agent should use the Blender control skills.
 
 ## When to Use Blender Skills
 

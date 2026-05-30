@@ -1,5 +1,5 @@
 /**
- * Typed API Client for the Secure OpenClaw UI
+ * Typed API Client for the Oh My Claw UI
  * Following clawrule.md requirements
  */
 
