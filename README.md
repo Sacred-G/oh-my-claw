@@ -331,6 +331,34 @@ git diff --cached --check
 | `node --check gateway.js` | Syntax-check gateway entry |
 | `node --check agent/prompt-builder.js` | Syntax-check prompt builder |
 
+## Self-Improvement
+
+One notable feature: the agent can modify its own code, add new capabilities, and restart itself to deploy updates.
+
+**Self-Improvement Capabilities:**
+- Modify agent logic, skills, and configurations
+- Add new MCP server integrations
+- Create and install new skills using the skill-creator system
+- Improve memory system
+- Enhance communication handling
+- Deploy updates and restart itself if needed
+
+**What It Can Improve:**
+- Agent core logic (message handling, routing, context)
+- Skills and capabilities (Blender, PDF generation, etc.)
+- Memory and learning systems
+- Platform integrations (WhatsApp, Telegram, etc.)
+- Tool wrappers and automation scripts
+- Documentation and self-knowledge
+
+**Safeguards:**
+- Explains changes before making them
+- Tests in isolated areas first
+- Keeps backups or uses Git commits
+- Gets approval for major architectural changes
+
+The agent can literally read its own code, identify improvements, implement them, test them, and deploy them.
+
 ## Current Status
 
 This is an active personal agent gateway, not a polished SaaS product. The next production-grade improvements should be:

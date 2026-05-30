@@ -171,14 +171,28 @@ export default class TelegramAdapter extends BaseAdapter {
         const fileLink = await this.bot.getFileLink(photo.file_id)
         const response = await fetch(fileLink)
         const buffer = Buffer.from(await response.arrayBuffer())
+
+        // Save photo to uploads directory
+        const savedFile = saveUpload({
+          buffer,
+          fileName: `photo_${Date.now()}.jpg`,
+          mimeType: 'image/jpeg',
+          platform: 'telegram',
+          chatId
+        })
+
         image = {
           data: buffer.toString('base64'),
           mediaType: 'image/jpeg'
         }
-        console.log('[Telegram] Image downloaded, size:', buffer.length)
+
+        console.log(`[Telegram] Photo saved: ${savedFile.path} (${buffer.length} bytes)`)
         if (!text) {
-          text = '[Image]'
+          text = `[Image saved to ${savedFile.path}]`
         }
+
+        // Update file reference
+        file = savedFile
       } catch (err) {
         console.error('[Telegram] Failed to download image:', err.message)
       }
