@@ -39,6 +39,9 @@ export default {
     token: process.env.TELEGRAM_BOT_TOKEN || '',
     allowedDMs: parseList(process.env.TELEGRAM_ALLOWED_DMS),       // user IDs, or '*' for all
     allowedGroups: parseList(process.env.TELEGRAM_ALLOWED_GROUPS),
+    // Guest user IDs: limited access — chat + their OWN Composio apps only.
+    // No filesystem, no shell, no access to host memory/cron.
+    guestDMs: parseList(process.env.TELEGRAM_GUEST_DMS),
     respondToMentionsOnly: true
   },
 
@@ -56,6 +59,8 @@ export default {
     workspace: WORKSPACE,        // Agent workspace directory (absolute path)
     maxTurns: 100,                // Max tool-use turns per message
     allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'TodoWrite', 'Skill', 'AskUserQuestion', 'read_pdf', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document', 'mcp__composio'],
+    // Tools available to GUEST users — chat + their own Composio apps. No filesystem/shell.
+    guestAllowedTools: ['TodoWrite', 'AskUserQuestion', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document', 'mcp__composio'],
     provider: 'claude',          // 'claude' or 'opencode'
     opencode: {
       model: 'opencode/gpt-5-nano',

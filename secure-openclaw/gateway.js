@@ -35,6 +35,7 @@ class Gateway {
       apiKey: process.env.COMPOSIO_API_KEY
     })
     this.composioSession = null
+    this.guestComposioSessions = new Map() // guestId -> Composio toolRouter session
     this.mcpServers = {}
     this.sseClients = new Set()
     this.setupQueueMonitoring()
@@ -126,6 +127,48 @@ class Gateway {
     }
 
     console.log(`[MCP] Total servers available: ${Object.keys(this.mcpServers).join(', ')}`)
+  }
+
+  /**
+   * Lazily create (and cache) a Composio toolRouter session for a guest user.
+   * Each guest gets their own user_id namespace so their connected accounts
+   * (Gmail, etc.) are isolated from the host's. Guests connect their own apps
+   * via /connect <toolkit>.
+   */
+  async getOrCreateGuestComposioSession(guestId) {
+    const existing = this.guestComposioSessions.get(guestId)
+    if (existing) return existing
+
+    const userId = `guest-${guestId}`
+    console.log(`[Composio] Creating guest session for ${userId}`)
+    try {
+      const session = await this.composio.toolRouter.session.create({ user_id: userId })
+      this.guestComposioSessions.set(guestId, session)
+      return session
+    } catch (err) {
+      console.error(`[Composio] Failed to create guest session for ${userId}:`, err.message)
+      return null
+    }
+  }
+
+  /**
+   * Build the per-run mcpServers map for a guest: replace the shared composio
+   * server with the guest's own session so they only see their own connections.
+   */
+  async buildGuestMcpServers(guestId) {
+    const session = await this.getOrCreateGuestComposioSession(guestId)
+    // Start from the host map but drop composio (and any other host-bound servers
+    // we don't want guests to see). External MCP servers from mcp-servers.json
+    // are shared infrastructure — keep them unless they hold host credentials.
+    const guestServers = {}
+    if (session) {
+      guestServers.composio = {
+        type: 'http',
+        url: session.mcp.url,
+        headers: session.mcp.headers
+      }
+    }
+    return guestServers
   }
 
   setupQueueMonitoring() {
@@ -348,10 +391,15 @@ class Gateway {
 
   setupAdapter(adapter, platform, platformConfig) {
     adapter.onMessage(async (message) => {
-      const sessionKey = adapter.generateSessionKey(config.agentId, platform, message)
+      // Guests get a namespaced session key so their transcript never mixes
+      // with the host's. Use the sender ID (Telegram user) as the namespace.
+      const baseSessionKey = adapter.generateSessionKey(config.agentId, platform, message)
+      const sessionKey = message.isGuest
+        ? `${baseSessionKey}:guest:${message.sender}`
+        : baseSessionKey
 
       console.log('')
-      console.log(`[${platform.toUpperCase()}] Incoming message:`)
+      console.log(`[${platform.toUpperCase()}] Incoming message${message.isGuest ? ' (GUEST)' : ''}:`)
       console.log(`  Session: ${sessionKey}`)
       console.log(`  From: ${message.sender}`)
       console.log(`  Group: ${message.isGroup}`)
@@ -382,7 +430,8 @@ class Gateway {
           message.text,
           sessionKey,
           adapter,
-          message.chatId
+          message.chatId,
+          { isGuest: !!message.isGuest, guestId: message.sender, platform }
         )
 
         if (commandResult.handled) {
@@ -404,15 +453,25 @@ class Gateway {
           await adapter.react(message.chatId, message.raw.key.id, '⏳')
         }
 
+        // Build per-run options. Guests run in a sandbox: their own Composio
+        // session, restricted tool list, no host memory/cron/applescript.
+        const runOptions = {}
+        if (message.isGuest) {
+          runOptions.guestMode = true
+          runOptions.allowedToolsOverride = config.agent?.guestAllowedTools || []
+          runOptions.mcpServersOverride = await this.buildGuestMcpServers(message.sender)
+        }
+
         // Enqueue agent run with optional image/file
-        console.log(`[${platform.toUpperCase()}] Processing...`)
+        console.log(`[${platform.toUpperCase()}] Processing${message.isGuest ? ' (guest sandbox)' : ''}...`)
         const response = await this.agentRunner.enqueueRun(
           sessionKey,
           message.text,
           adapter,
           message.chatId,
           message.image,  // Pass image if present
-          message.file    // Pass file if present
+          message.file,   // Pass file if present
+          runOptions
         )
 
         if (adapter.stopTyping) {

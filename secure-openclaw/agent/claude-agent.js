@@ -201,17 +201,21 @@ export default class ClaudeAgent extends EventEmitter {
       chatId = null,
       image = null,
       mcpServers = {},
-      canUseTool
+      canUseTool,
+      allowedToolsOverride = null,
+      guestMode = false
     } = params
 
     const session = this.getSession(sessionKey)
     session.lastActivity = Date.now()
     session.messageCount++
 
-    // Set cron context for scheduled messages
-    setCronContext({ platform, chatId, sessionKey })
+    // Set cron context for scheduled messages (not used in guest mode — no cron access)
+    if (!guestMode) {
+      setCronContext({ platform, chatId, sessionKey })
+    }
 
-    // Set gateway context
+    // Set gateway context (needed for send_message tools in both modes)
     setGatewayContext({
       gateway: this.gateway,
       currentPlatform: platform,
@@ -219,27 +223,33 @@ export default class ClaudeAgent extends EventEmitter {
       currentSessionKey: sessionKey
     })
 
-    // Combine all allowed tools
-    const allAllowedTools = [...this.allowedTools, ...this.cronTools, ...this.gatewayTools, ...this.applescriptTools]
+    // Combine allowed tools. Guests get only the override list + gateway tools (for replies).
+    // Hosts get the full set including cron/applescript/skills/fs.
+    const allAllowedTools = guestMode
+      ? [...(allowedToolsOverride || []), ...this.gatewayTools]
+      : [...(allowedToolsOverride || this.allowedTools), ...this.cronTools, ...this.gatewayTools, ...this.applescriptTools]
 
-    // Build system prompt
-    const memoryContext = this.memoryManager.getMemoryContext()
-    const cronInfo = this.getCronSummary()
+    // Build system prompt — guests get no host memory, no cron summary
+    const memoryContext = guestMode ? '' : this.memoryManager.getMemoryContext()
+    const cronInfo = guestMode ? '' : this.getCronSummary()
     const systemPrompt = buildSystemPrompt({
       memoryContext,
       sessionInfo: { sessionKey, platform },
       cronInfo,
       providerName: this.providerName,
-      workspace: this.workspace,
+      workspace: guestMode ? '(guest sandbox — no filesystem access)' : this.workspace,
       toolCount: allAllowedTools.length
     })
 
-    const allMcpServers = {
-      cron: this.cronMcpServer,
-      gateway: this.gatewayMcpServer,
-      ...(this.applescriptMcpServer ? { applescript: this.applescriptMcpServer } : {}),
-      ...mcpServers
-    }
+    // Guests don't get cron or applescript MCP servers
+    const allMcpServers = guestMode
+      ? { gateway: this.gatewayMcpServer, ...mcpServers }
+      : {
+          cron: this.cronMcpServer,
+          gateway: this.gatewayMcpServer,
+          ...(this.applescriptMcpServer ? { applescript: this.applescriptMcpServer } : {}),
+          ...mcpServers
+        }
 
     // Initialize bridge if using a provider that requires it (OpenAI, etc.)
     let bridge = null

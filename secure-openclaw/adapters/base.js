@@ -75,14 +75,22 @@ export default class BaseAdapter {
         return false
       }
     } else {
-      if (config.allowedDMs.length === 0) {
-        console.log(`[Security] Blocked DM from ${sender || chatId} (no DMs allowed — set allowedDMs in .env)`)
+      const guestList = config.guestDMs || []
+      const senderId = sender || chatId
+      const isHost = config.allowedDMs.includes('*') || config.allowedDMs.includes(senderId) || config.allowedDMs.includes(chatId)
+      const isGuest = guestList.includes('*') || guestList.includes(senderId) || guestList.includes(chatId)
+
+      if (!isHost && !isGuest) {
+        const reason = config.allowedDMs.length === 0 && guestList.length === 0
+          ? 'no DMs allowed — set allowedDMs or guestDMs in .env'
+          : 'not in allowlist'
+        console.log(`[Security] Blocked DM from ${senderId} (${reason})`)
         return false
       }
-      if (!config.allowedDMs.includes('*') && !config.allowedDMs.includes(chatId)) {
-        console.log(`[Security] Blocked DM from ${sender || chatId} (not in allowlist)`)
-        return false
-      }
+
+      // Tag the message so downstream knows whether to apply guest sandbox.
+      // Host status takes precedence if listed in both.
+      message.isGuest = !isHost && isGuest
     }
 
     return true

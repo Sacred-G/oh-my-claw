@@ -1,0 +1,17 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Oh My Claw logo</title>
+  <desc id="desc">A professional wordmark for the Secure OpenClaw agent gateway.</desc>
+  <rect width="760" height="180" rx="28" fill="#111827"/>
+  <rect x="18" y="18" width="724" height="144" rx="22" fill="#172033" stroke="#334155" stroke-width="2"/>
+  <g transform="translate(48 42)">
+    <path d="M52 8C31.013 8 14 25.013 14 46v10c0 27.614 22.386 50 50 50h8c8.837 0 16-7.163 16-16V46C88 25.013 72.987 8 52 8Z" fill="#F97316"/>
+    <path d="M52 22C38.745 22 28 32.745 28 46v8c0 19.882 16.118 36 36 36h4c2.209 0 4-1.791 4-4V46C72 32.745 65.255 22 52 22Z" fill="#FDBA74"/>
+    <path d="M103 17c18.225 9.659 30 27.936 30 49 0 13.717-4.993 26.268-13.259 35.944" stroke="#38BDF8" stroke-width="10" stroke-linecap="round"/>
+    <path d="M123 7c24.851 12.691 41 37.65 41 66 0 20.618-8.542 39.234-22.273 52.511" stroke="#22C55E" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="51" cy="46" r="8" fill="#111827"/>
+    <path d="M90 90h34c6.627 0 12 5.373 12 12v4c0 6.627-5.373 12-12 12H86" stroke="#E5E7EB" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="224" y="78" fill="#F8FAFC" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="42" font-weight="800" letter-spacing="0">Oh My Claw</text>
+  <text x="226" y="116" fill="#CBD5E1" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="20" font-weight="500" letter-spacing="0">Secure OpenClaw agent gateway</text>
+  <text x="226" y="142" fill="#94A3B8" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="15" font-weight="500" letter-spacing="0">Messaging channels, provider routing, MCP tools, memory, and app integrations</text>
+</svg>

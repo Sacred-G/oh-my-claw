@@ -37,12 +37,24 @@ export default class CommandHandler {
    * Execute a command
    * @returns {Object} { handled: boolean, response?: string }
    */
-  async execute(text, sessionKey, adapter, chatId) {
+  async execute(text, sessionKey, adapter, chatId, context = {}) {
     if (!this.isCommand(text)) {
       return { handled: false }
     }
 
     const { command, args } = this.parse(text)
+    const { isGuest, guestId } = context
+
+    // Guests get a narrow command surface — nothing that touches host state.
+    if (isGuest) {
+      const guestAllowed = new Set(['new', 'reset', 'help', 'connect', 'apps'])
+      if (!guestAllowed.has(command)) {
+        return {
+          handled: true,
+          response: `Sorry, the /${command} command isn't available in shared access. Try /help.`
+        }
+      }
+    }
 
     switch (command) {
       case 'new':
@@ -59,7 +71,7 @@ export default class CommandHandler {
         return this.handleQueue()
 
       case 'help':
-        return this.handleHelp()
+        return isGuest ? this.handleGuestHelp() : this.handleHelp()
 
       case 'stop':
         return this.handleStop(sessionKey)
@@ -70,9 +82,87 @@ export default class CommandHandler {
       case 'provider':
         return this.handleProvider(args, chatId, adapter)
 
+      case 'connect':
+        return this.handleConnect(args, guestId)
+
+      case 'apps':
+        return this.handleGuestApps(guestId)
+
       default:
         // Unknown command, pass to agent
         return { handled: false }
+    }
+  }
+
+  /**
+   * Help text shown to guest users — only mentions commands they can use.
+   */
+  handleGuestHelp() {
+    const lines = [
+      '*Shared access — available commands:*',
+      '',
+      '/help — this message',
+      '/new — start a fresh conversation',
+      '/connect <app> — connect one of your apps (e.g. /connect gmail)',
+      '/apps — list apps you have connected',
+      '',
+      'You can chat normally and use any apps you connect.',
+      'You do *not* have access to the host filesystem, shell, or the host\'s connected apps.'
+    ]
+    return { handled: true, response: lines.join('\n') }
+  }
+
+  /**
+   * Guest connects one of their own Composio toolkits (Gmail, Notion, etc.).
+   * Returns an OAuth URL they open to authorize.
+   */
+  async handleConnect(args, guestId) {
+    const toolkit = (args || '').trim().toLowerCase()
+    if (!toolkit) {
+      return { handled: true, response: 'Usage: /connect <app>  (e.g. /connect gmail)' }
+    }
+    if (!guestId) {
+      return { handled: true, response: 'Could not identify your guest account.' }
+    }
+    try {
+      const session = await this.gateway.getOrCreateGuestComposioSession(guestId)
+      if (!session) {
+        return { handled: true, response: 'Could not initialize your Composio session. Try again later.' }
+      }
+      const link = await this.gateway.composio.toolRouter.session.link(session.session_id, { toolkit })
+      const url = link.redirectUrl || link.redirect_url || link.url
+      if (!url) {
+        return { handled: true, response: `Connected ${toolkit} (no auth required).` }
+      }
+      return { handled: true, response: `Open this link to connect ${toolkit}:\n${url}` }
+    } catch (err) {
+      if (err.message && err.message.includes('does not require authentication')) {
+        return { handled: true, response: `${toolkit} doesn't require auth — it's already available.` }
+      }
+      console.error(`[Connect] Failed for guest ${guestId}/${toolkit}:`, err.message)
+      return { handled: true, response: `Failed to connect ${toolkit}: ${err.message}` }
+    }
+  }
+
+  /**
+   * List apps the guest has connected (best effort — filters by their user_id).
+   */
+  async handleGuestApps(guestId) {
+    if (!guestId) {
+      return { handled: true, response: 'Could not identify your guest account.' }
+    }
+    try {
+      const userId = `guest-${guestId}`
+      const response = await this.gateway.composio.connectedAccounts.list({ user_ids: [userId] })
+      const items = response.items || []
+      if (!items.length) {
+        return { handled: true, response: 'You haven\'t connected any apps yet. Use /connect <app>.' }
+      }
+      const list = items.map(a => `• ${a.toolkit?.slug || a.appName || 'unknown'} (${a.status || 'active'})`).join('\n')
+      return { handled: true, response: `*Your connected apps:*\n${list}` }
+    } catch (err) {
+      console.error(`[Apps] Failed for guest ${guestId}:`, err.message)
+      return { handled: true, response: `Failed to list apps: ${err.message}` }
     }
   }
 

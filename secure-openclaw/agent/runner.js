@@ -90,7 +90,7 @@ export default class AgentRunner extends EventEmitter {
   /**
    * Enqueue a run for a session
    */
-  async enqueueRun(sessionKey, message, adapter, chatId, image = null, file = null) {
+  async enqueueRun(sessionKey, message, adapter, chatId, image = null, file = null, options = {}) {
     if (!this.queues.has(sessionKey)) {
       this.queues.set(sessionKey, { items: [], processing: false })
     }
@@ -107,7 +107,9 @@ export default class AgentRunner extends EventEmitter {
         chatId,
         image,
         file,
-        mcpServers: this.mcpServers || {},
+        mcpServers: options.mcpServersOverride || this.mcpServers || {},
+        allowedToolsOverride: options.allowedToolsOverride || null,
+        guestMode: !!options.guestMode,
         resolve,
         reject,
         queuedAt: Date.now()
@@ -281,7 +283,7 @@ export default class AgentRunner extends EventEmitter {
    * Execute a single agent run with streaming messages
    */
   async executeRun(run) {
-    const { sessionKey, message: originalMessage, adapter, chatId, image, file, mcpServers } = run
+    const { sessionKey, message: originalMessage, adapter, chatId, image, file, mcpServers, allowedToolsOverride, guestMode } = run
     const platform = this.extractPlatform(sessionKey)
 
     let effectiveImage = image
@@ -362,7 +364,9 @@ ${originalMessage}`
         chatId,
         image: effectiveImage,
         mcpServers,
-        canUseTool
+        canUseTool,
+        allowedToolsOverride,
+        guestMode
       })) {
         // Accumulate text
         if (chunk.type === 'text') {
