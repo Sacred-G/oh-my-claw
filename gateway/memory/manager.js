@@ -3,11 +3,7 @@ import path from 'path'
 import os from 'os'
 
 const DEFAULT_WORKSPACE = path.join(os.homedir(), 'oh-my-claw')
-const LEGACY_WORKSPACE = path.join(os.homedir(), 'secure-openclaw')
-const WORKSPACE =
-  process.env.OH_MY_CLAW_WORKSPACE ||
-  process.env.SECURE_OPENCLAW_WORKSPACE ||
-  (fs.existsSync(LEGACY_WORKSPACE) && !fs.existsSync(DEFAULT_WORKSPACE) ? LEGACY_WORKSPACE : DEFAULT_WORKSPACE)
+const WORKSPACE = process.env.OH_MY_CLAW_WORKSPACE || DEFAULT_WORKSPACE
 const MEMORY_DIR = path.join(WORKSPACE, 'memory')
 
 /**

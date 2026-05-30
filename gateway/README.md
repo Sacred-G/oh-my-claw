@@ -5,9 +5,8 @@ adapters, an agent runner, provider integrations, file-backed memory, MCP-style
 tools, scheduling, uploads, Composio integrations, and a small HTTP API used by
 the dashboard.
 
-The package identity is now `oh-my-claw`. The legacy `secure-openclaw` CLI alias
-and workspace env var remain temporarily for compatibility with existing local
-setups.
+The package identity is `oh-my-claw`. Use the `oh-my-claw` CLI command and the
+`OH_MY_CLAW_WORKSPACE` workspace override when needed.
 
 This package is not yet the final cognitive-agent runtime. It does not contain
 the Phase 2 `IncomingTurn -> runTurn -> dispatchTool -> approval -> memory ->
@@ -83,7 +82,6 @@ Common gateway variables:
 | `PORT` | Gateway HTTP port. Defaults to `4096` |
 | `WORKSPACE_DIR` | Override workspace directory |
 | `OH_MY_CLAW_WORKSPACE` | Direct workspace override for memory manager callers |
-| `SECURE_OPENCLAW_WORKSPACE` | Legacy workspace override |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token |
 | `SIGNAL_PHONE_NUMBER` | Signal phone number |
 

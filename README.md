@@ -175,7 +175,6 @@ Create `gateway/.env` locally. Do not commit it.
 | `PORT` | Optional | Gateway HTTP port, defaults to `4096` |
 | `WORKSPACE_DIR` | Optional | Overrides the project workspace directory |
 | `OH_MY_CLAW_WORKSPACE` | Optional | Direct workspace override for memory manager callers |
-| `SECURE_OPENCLAW_WORKSPACE` | Legacy optional | Backward-compatible workspace override |
 | `WHATSAPP_ALLOWED_DMS` | Optional | Comma-separated WhatsApp DM allowlist, or `*` |
 | `WHATSAPP_ALLOWED_GROUPS` | Optional | Comma-separated WhatsApp group allowlist, or `*` |
 | `TELEGRAM_BOT_TOKEN` | For Telegram | Bot token from BotFather |

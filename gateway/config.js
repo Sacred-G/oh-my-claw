@@ -10,10 +10,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const WORKSPACE = process.env.WORKSPACE_DIR || __dirname
 
 // Propagate to OH_MY_CLAW_WORKSPACE so modules like memory/manager.js that read
-// it at import time see the same workspace. Keep the old env var as a
-// compatibility alias for existing local setups.
+// it at import time see the same workspace.
 if (!process.env.OH_MY_CLAW_WORKSPACE) {
-  process.env.OH_MY_CLAW_WORKSPACE = process.env.SECURE_OPENCLAW_WORKSPACE || WORKSPACE
+  process.env.OH_MY_CLAW_WORKSPACE = WORKSPACE
 }
 
 export default {

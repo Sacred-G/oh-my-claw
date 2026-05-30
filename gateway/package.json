@@ -5,8 +5,7 @@
   "type": "module",
   "main": "gateway.js",
   "bin": {
-    "oh-my-claw": "./cli.js",
-    "secure-openclaw": "./cli.js"
+    "oh-my-claw": "./cli.js"
   },
   "scripts": {
     "start": "node cli.js start",
