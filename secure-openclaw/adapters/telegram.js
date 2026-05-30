@@ -18,10 +18,7 @@ export default class TelegramAdapter extends BaseAdapter {
     super(config)
     this.bot = null
     this.botInfo = null
-
-    if (!fs.existsSync(UPLOADS_DIR)) {
-      fs.mkdirSync(UPLOADS_DIR, { recursive: true })
-    }
+    // Uploads directory is managed by tools/uploads.js
   }
 
   async start() {

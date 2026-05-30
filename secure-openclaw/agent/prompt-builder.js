@@ -113,7 +113,7 @@ Scheduling: mcp__cron__schedule_delayed, mcp__cron__schedule_recurring, mcp__cro
 Gateway: mcp__gateway__send_message, mcp__gateway__list_platforms, mcp__gateway__get_queue_status, mcp__gateway__get_current_context, mcp__gateway__list_sessions, mcp__gateway__broadcast_message, mcp__gateway__send_image, mcp__gateway__send_document
 AppleScript (macOS): mcp__applescript__run_script, mcp__applescript__list_apps, mcp__applescript__activate_app, mcp__applescript__display_notification
 Blender 3D: mcp__blender__* tools + ${workspace}/blender-skills/blender_wrapper.sh via Bash
-Composio: Access to 500+ app integrations (Gmail, Slack, GitHub, Google Sheets, etc.) and browser automation via Composio MCP tools
+Composio (toolRouter): mcp__composio__COMPOSIO_SEARCH_TOOLS, mcp__composio__COMPOSIO_GET_TOOL_SCHEMAS, mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL, mcp__composio__COMPOSIO_MANAGE_CONNECTIONS, mcp__composio__COMPOSIO_WAIT_FOR_CONNECTIONS, mcp__composio__COMPOSIO_REMOTE_WORKBENCH, mcp__composio__COMPOSIO_REMOTE_BASH_TOOL — gateway to 500+ apps
 Agent Skills: Discoverable skills in ${workspace}/skills-main/skills/
 ${toolCount > 0 ? `\nYou have a total of ${toolCount} tools available.` : ''}
 
@@ -210,33 +210,35 @@ When the user says things like "can I text you on WhatsApp?" or "I'm going outsi
 - The gateway will show a QR code in the logs if WhatsApp needs to be connected - tell the user to check /tmp/secure-openclaw.log if needed
 `
 
-  if (providerName === 'opencode') {
-    prompt += `
-## Composio Integrations — IMPORTANT
+  prompt += `
+## Composio Integrations — CRITICAL
 
-You have access to 500+ app integrations via Composio MCP tools. These are available as remote MCP tools and you SHOULD actively use them.
+You may have a live Composio toolRouter MCP server connected as \`composio\`. Use it when the Composio MCP tools are present in the active tool list.
 
-### How to Use
-- Composio tools are available as MCP tools prefixed with the app name (e.g., gmail, slack, github, google_sheets, etc.)
-- To find available tools, look for MCP tools related to the app you need
-- ALWAYS prefer Composio tools over browser automation for app tasks
+### HARD RULES — DO NOT BREAK
+- NEVER tell the user "you need to configure this in Claude Desktop." Claude Desktop is irrelevant; you are running inside a custom gateway with its own MCP wiring.
+- If app tools are present, search and use them instead of asking the user to perform the action manually.
+- NEVER ask the user to give you credentials or API keys in chat. If a connection is missing, use the Composio connection-management tools or explain that the connection must be authorized through the proper OAuth flow.
+- If you're unsure which Composio tool to use, call \`COMPOSIO_SEARCH_TOOLS\` — never refuse for "not sure how to do this."
 
-### Common Integrations
-- **Email**: Gmail — send, read, search emails, manage labels
-- **Messaging**: Slack — send messages, read channels, manage threads
-- **Code**: GitHub — repos, issues, PRs, commits, actions
-- **Docs**: Google Docs, Notion — create, read, edit documents
-- **Sheets**: Google Sheets — read, write, update spreadsheets
-- **Calendar**: Google Calendar — create, list, update events
-- **Tasks**: Trello, Jira, Linear — manage boards, tickets, projects
-- **Storage**: Google Drive, Dropbox — upload, download, manage files
+### The 7 meta-tools (exact names)
+- \`mcp__composio__COMPOSIO_SEARCH_TOOLS\` — semantic search the Composio catalog. Returns matching tool slugs + suggested execution plan.
+- \`mcp__composio__COMPOSIO_GET_TOOL_SCHEMAS\` — fetch full input schemas for specific tool slugs.
+- \`mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL\` — execute one or more discovered tools (up to 50 per call). THIS is how you actually do the work.
+- \`mcp__composio__COMPOSIO_MANAGE_CONNECTIONS\` — list / create / remove OAuth connections to apps.
+- \`mcp__composio__COMPOSIO_WAIT_FOR_CONNECTIONS\` — wait for the user to finish an OAuth flow.
+- \`mcp__composio__COMPOSIO_REMOTE_WORKBENCH\` — run Python in a remote sandbox to process large tool responses.
+- \`mcp__composio__COMPOSIO_REMOTE_BASH_TOOL\` — run bash in a remote sandbox for bulk file/data ops.
 
-### When a User Asks You To Do Something
-1. First check if a Composio tool exists for the task (email, messaging, code, docs, etc.)
-2. Use the Composio tool directly — do NOT ask the user to do it manually
-3. Only fall back to browser tools if no Composio integration exists for that specific task
+### Required workflow for ANY app action
+Example: user says "check my last 5 outlook emails"
+1. Call \`COMPOSIO_SEARCH_TOOLS\` with query \`"list recent outlook emails"\`. It returns matching tool slugs (e.g. \`OUTLOOK_OUTLOOK_LIST_MESSAGES\`) plus connection status and a suggested plan.
+2. (Optional) Call \`COMPOSIO_GET_TOOL_SCHEMAS\` for the slug if you need the exact argument shape.
+3. Call \`COMPOSIO_MULTI_EXECUTE_TOOL\` with the slug and arguments. Example arg shape: \`{ "tool_calls": [{ "tool_slug": "OUTLOOK_OUTLOOK_LIST_MESSAGES", "arguments": { "top": 5 } }] }\` (consult the schema returned in step 1/2 for the exact field names).
+4. Summarize the results in plain text for the user.
+
+ALWAYS prefer Composio tools over browser automation, AppleScript, or telling the user to do it manually.
 `
-  }
 
   return prompt
 }

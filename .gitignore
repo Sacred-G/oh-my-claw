@@ -14,8 +14,25 @@ npm-debug.log*
 secure-openclaw/uploads/
 secure-openclaw/auth_whatsapp/
 secure-openclaw/transcripts/*.jsonl
-secure-openclaw/memory/
+secure-openclaw/memory/*.md
+secure-openclaw/memory/*.json
+secure-openclaw/memory/*.jsonl
 secure-openclaw/.secure-openclaw/
+secure-openclaw/composio-toolkits.json
+
+# Local skill caches / personal skill workspaces
+secure-openclaw/.curated/
+secure-openclaw/.system/
+secure-openclaw/other-skills/
+secure-openclaw/pdrs-2013-rating/
+secure-openclaw/pi-law-app-builder/
+secure-openclaw/skills-main/skills/.curated copy/
+secure-openclaw/skills-main/skills/.curated/.system/
+secure-openclaw/skills-main/skills/.curated/other-skills/
+secure-openclaw/skills-main/skills/.curated/pdrs-2013-rating/
+secure-openclaw/skills-main/skills/.curated/pi-law-app-builder/
+secure-openclaw/skills-main/skills/pdrs-2013-rating/
+secure-openclaw/skills-main/skills/pi-law-app-builder/
 
 # Scratch / experimental
 secure-openclaw/test.cjs

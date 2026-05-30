@@ -147,10 +147,27 @@ dist
 
 # Personal Memory
 MEMORY.md
-memory/
+/memory/*.md
+/memory/*.json
+/memory/*.jsonl
 
 # Local MCP config
 mcp-servers.json
+composio-toolkits.json
+
+# Local skill caches / personal skill workspaces
+/.curated/
+/.system/
+/other-skills/
+/pdrs-2013-rating/
+/pi-law-app-builder/
+/skills-main/skills/.curated copy/
+/skills-main/skills/.curated/.system/
+/skills-main/skills/.curated/other-skills/
+/skills-main/skills/.curated/pdrs-2013-rating/
+/skills-main/skills/.curated/pi-law-app-builder/
+/skills-main/skills/pdrs-2013-rating/
+/skills-main/skills/pi-law-app-builder/
 
 # Vite files
 vite.config.js.timestamp-*

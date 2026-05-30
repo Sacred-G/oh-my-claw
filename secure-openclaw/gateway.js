@@ -64,6 +64,7 @@ class Gateway {
   }
 
   async initMcpServers() {
+    console.log('[MCP] Initializing MCP servers...')
     // Load external MCP servers from mcp-servers.json
     const __dirname = path.dirname(fileURLToPath(import.meta.url))
     const mcpConfigPath = path.join(__dirname, 'mcp-servers.json')
@@ -84,19 +85,41 @@ class Gateway {
       console.error('[MCP] Failed to load mcp-servers.json:', err.message)
     }
 
-    // Initialize Composio session
-    const userId = config.agentId || 'secure-openclaw-user'
-    console.log('[Composio] Initializing session for:', userId)
+    // Initialize Composio MCP server using toolRouter with search and slugs support.
+    // Toolkit pins (user_id + authConfigIds) live in composio-toolkits.json so they
+    // can be edited without code changes.
+    let toolkitsConfig = { user_id: null, toolkits: [] }
+    const toolkitsConfigPath = path.join(__dirname, 'composio-toolkits.json')
     try {
-      this.composioSession = await this.composio.toolRouter.session.create({
-        user_id: userId
-      })
+      if (fs.existsSync(toolkitsConfigPath)) {
+        toolkitsConfig = JSON.parse(fs.readFileSync(toolkitsConfigPath, 'utf-8'))
+      }
+    } catch (err) {
+      console.error('[Composio] Failed to load composio-toolkits.json:', err.message)
+    }
+    const userId = toolkitsConfig.user_id || config.agentId || 'secure-openclaw-user'
+    const pinnedToolkits = Array.isArray(toolkitsConfig.toolkits) ? toolkitsConfig.toolkits : []
+    console.log('[Composio] Initializing session',
+      pinnedToolkits.length ? `with ${pinnedToolkits.length} pinned toolkit(s)` : '(no pinned toolkits)')
+    try {
+      const sessionPayload = { user_id: userId }
+      if (pinnedToolkits.length) {
+        // auth_configs pins ac_ ids for these toolkits when they execute, without
+        // restricting which toolkits search/discovery can see across Composio's catalog.
+        const authConfigs = {}
+        for (const t of pinnedToolkits) {
+          if (t.authConfigId) authConfigs[t.toolkit] = t.authConfigId
+        }
+        if (Object.keys(authConfigs).length) sessionPayload.auth_configs = authConfigs
+      }
+      this.composioSession = await this.composio.toolRouter.session.create(sessionPayload)
       this.mcpServers.composio = {
         type: 'http',
         url: this.composioSession.mcp.url,
         headers: this.composioSession.mcp.headers
       }
       console.log('[Composio] Session ready')
+      console.log('[Composio] Available tools include: COMPOSIO_SEARCH_TOOLS, COMPOSIO_GET_TOOL_SCHEMAS, COMPOSIO_MULTI_EXECUTE_TOOL')
     } catch (err) {
       console.error('[Composio] Failed to initialize:', err.message)
       console.error('[Composio] Error details:', err)

@@ -55,7 +55,7 @@ export default {
   agent: {
     workspace: WORKSPACE,        // Agent workspace directory (absolute path)
     maxTurns: 100,                // Max tool-use turns per message
-    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'TodoWrite', 'Skill', 'AskUserQuestion', 'read_pdf', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document'],
+    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'TodoWrite', 'Skill', 'AskUserQuestion', 'read_pdf', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document', 'mcp__composio'],
     provider: 'claude',          // 'claude' or 'opencode'
     opencode: {
       model: 'opencode/gpt-5-nano',
