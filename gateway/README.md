@@ -1,17 +1,30 @@
-# Oh My Claw
+<p align="center">
+  <img src="../assets/openclaw-logo.svg" alt="Oh My Claw agent gateway" width="760">
+</p>
 
-Oh My Claw is the runnable Node.js gateway in this package. It hosts messaging
-adapters, an agent runner, provider integrations, file-backed memory, MCP-style
-tools, scheduling, uploads, Composio integrations, and a small HTTP API used by
-the dashboard.
+<p align="center">
+  <a href="LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-MIT-111827"></a>
+  <img alt="Node.js" src="https://img.shields.io/badge/node-18%2B-22c55e">
+  <img alt="Package" src="https://img.shields.io/badge/package-oh--my--claw-38bdf8">
+  <img alt="Dashboard" src="https://img.shields.io/badge/dashboard-Next.js-000000">
+  <img alt="Providers" src="https://img.shields.io/badge/providers-Claude%20%7C%20Opencode%20%7C%20OpenAI-f97316">
+</p>
 
-The package identity is `oh-my-claw`. Use the `oh-my-claw` CLI command and the
-`OH_MY_CLAW_WORKSPACE` workspace override when needed.
+# Oh My Claw Gateway
 
-This package is not yet the final cognitive-agent runtime. It does not contain
-the Phase 2 `IncomingTurn -> runTurn -> dispatchTool -> approval -> memory ->
-audit` architecture. Treat this package as the current gateway implementation
-and the place to harden or migrate from.
+This package is the runnable Node.js gateway for Oh My Claw. It hosts the
+messaging adapters, agent runner, providers, file-backed memory, MCP-style
+tools, scheduling, uploads, Composio integrations, HTTP API, Docker setup, and
+the Next.js dashboard under `ui/`.
+
+The package identity is `oh-my-claw`. Use the `oh-my-claw` CLI command and
+`OH_MY_CLAW_WORKSPACE` only when you need to override the default memory
+workspace.
+
+This is not yet the final cognitive-agent runtime. It does not contain the
+Phase 2 `IncomingTurn -> runTurn -> dispatchTool -> approval -> memory -> audit`
+architecture. Treat this as the current gateway implementation and the place to
+harden or migrate from.
 
 ## Install
 
@@ -68,7 +81,7 @@ Primary files:
 ## Configuration
 
 Configuration lives in `config.js` and environment variables. The default
-workspace is the package directory unless `WORKSPACE_DIR` is set.
+workspace is this package directory unless `WORKSPACE_DIR` is set.
 
 Common gateway variables:
 
@@ -80,7 +93,7 @@ Common gateway variables:
 | `OPENAI_BASE_URL` | Optional OpenAI-compatible endpoint |
 | `OPENAI_MODEL` | Optional OpenAI model override |
 | `PORT` | Gateway HTTP port. Defaults to `4096` |
-| `WORKSPACE_DIR` | Override workspace directory |
+| `WORKSPACE_DIR` | Override package workspace directory |
 | `OH_MY_CLAW_WORKSPACE` | Direct workspace override for memory manager callers |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token |
 | `SIGNAL_PHONE_NUMBER` | Signal phone number |
@@ -163,38 +176,6 @@ The gateway HTTP server starts on `PORT` or `4096`.
 `POST /config/update` mutates process memory only. It does not persist changes
 to `config.js` or restart adapters.
 
-## Tools And Permissions
-
-Host tools configured in `config.js` include filesystem, shell, skill,
-question, PDF, gateway-send, and Composio tool names. Cron and AppleScript tools
-are added by the agent runtime when available.
-
-Important security reality: the gateway constructs the agent with
-`permissionMode: 'bypassPermissions'` in `gateway.js`. There is a messaging
-approval callback in the runner, but this is not the same thing as a persisted,
-audited approval policy. Do not represent this package as production-grade tool
-governance until the Phase 2 core boundary exists.
-
-Guest Telegram users are safer: they get a restricted tool list, their own
-Composio session namespace, and no host filesystem, shell, memory, cron, or
-AppleScript access.
-
-## Memory
-
-Memory is file-backed and loaded into the system prompt. It is not vector-backed
-and does not have duplicate/conflict resolution semantics.
-
-Runtime memory paths:
-
-```text
-MEMORY.md
-memory/*.md
-memory/*.json
-memory/*.jsonl
-```
-
-These files are ignored because they may contain private user data.
-
 ## Dashboard
 
 The dashboard is a separate Next.js package in `ui/`.
@@ -236,7 +217,7 @@ Do not commit:
 - `memory/*.md`
 - `.curated/`, `.system/`, and private skill workspaces
 
-## Best Next Step
+## Next Milestone
 
 The technically correct next milestone is not more adapters or more provider
 surface. It is a complete Phase 2 vertical slice with a framework-light core,
