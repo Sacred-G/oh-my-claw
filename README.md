@@ -144,7 +144,7 @@ agent: {
   provider: 'claude',
   maxTurns: 100,
   opencode: {
-    model: 'opencode/gpt-5-nano',
+    model: 'sonnet-4.6',
     hostname: '127.0.0.1',
     port: 4097
   }
