@@ -51,43 +51,33 @@ export function useIntegrations() {
       return response.json()
     },
     refetchInterval: 30000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   })
 }
 
 export function useAvailableToolkits() {
-  console.log('[useAvailableToolkits] Hook called')
-  const result = useQuery<AvailableToolkit[]>({
+  return useQuery<AvailableToolkit[]>({
     queryKey: ["available-toolkits"],
     queryFn: async () => {
-      console.log('[Hook] Fetching available toolkits...')
       const response = await fetch("/api/proxy/integrations/available")
-      console.log('[Hook] Response status:', response.status, response.ok)
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('[Hook] Error response:', errorText)
         throw new Error("Failed to fetch available toolkits")
       }
-      const data = await response.json()
-      console.log('[Hook] Received data:', data)
-      return data
+      return response.json()
     },
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     retry: 1,
   })
-  console.log('[useAvailableToolkits] Query result:', result)
-  return result
 }
 
 export async function connectApp(appName: string) {
-  console.log('[connectApp] Connecting to:', appName)
   const response = await fetch(`/api/proxy/integrations/connect/${appName}`)
-  console.log('[connectApp] Response status:', response.status, response.ok)
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('[connectApp] Error response:', errorText)
     throw new Error(`Failed to connect ${appName}: ${errorText}`)
   }
-  const data = await response.json()
-  console.log('[connectApp] Response data:', data)
-  return data
+  return response.json()
 }

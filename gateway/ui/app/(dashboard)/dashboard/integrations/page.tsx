@@ -10,15 +10,29 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 
+function getToolkitMeta(toolkit: {
+  meta?: Partial<{
+    logo: string
+    description: string
+    categories: Array<{ id: string; name: string }>
+    tools_count: number
+    triggers_count: number
+  }>
+}) {
+  return {
+    logo: toolkit.meta?.logo || "",
+    description: toolkit.meta?.description || "No description available.",
+    categories: toolkit.meta?.categories || [],
+    toolsCount: toolkit.meta?.tools_count ?? 0,
+    triggersCount: toolkit.meta?.triggers_count ?? 0,
+  }
+}
+
 export default function IntegrationsPage() {
   const { data: connectedApps, isLoading, error: connectedError } = useIntegrations()
   const { data: availableToolkits, isLoading: isLoadingToolkits, error: toolkitsError } = useAvailableToolkits()
   const [connectingApp, setConnectingApp] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-
-  console.log('[Integrations] Connected apps:', connectedApps)
-  console.log('[Integrations] Available toolkits:', availableToolkits)
-  console.log('[Integrations] Errors:', { connectedError, toolkitsError })
 
   const handleConnect = async (appName: string) => {
     setConnectingApp(appName)
@@ -54,11 +68,12 @@ export default function IntegrationsPage() {
   const filteredToolkits = availableToolkits?.filter((toolkit) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
+    const meta = getToolkitMeta(toolkit)
     return (
       toolkit.name.toLowerCase().includes(query) ||
       toolkit.slug.toLowerCase().includes(query) ||
-      toolkit.meta.description.toLowerCase().includes(query) ||
-      toolkit.meta.categories.some((cat) => cat.name.toLowerCase().includes(query))
+      meta.description.toLowerCase().includes(query) ||
+      meta.categories.some((cat) => cat.name.toLowerCase().includes(query))
     )
   })
 
@@ -98,7 +113,6 @@ export default function IntegrationsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {connectedApps.map((app) => {
-                console.log('[Connected App]', app)
                 const logo = getToolkitLogo(app.toolkit?.slug)
                 const appName = getToolkitName(app.toolkit?.slug)
                 return (
@@ -182,15 +196,16 @@ export default function IntegrationsPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredToolkits.map((toolkit) => {
                 const connected = isConnected(toolkit.slug)
-                const primaryCategory = toolkit.meta.categories[0]?.name || "Tools"
+                const meta = getToolkitMeta(toolkit)
+                const primaryCategory = meta.categories[0]?.name || "Tools"
                 return (
                   <Card key={toolkit.slug} className={connected ? "opacity-60" : ""}>
                     <CardHeader className="py-4">
                       <div className="flex items-start gap-3">
-                        {toolkit.meta.logo && (
+                        {meta.logo && (
                           <div className="w-10 h-10 shrink-0 relative">
                             <Image
-                              src={toolkit.meta.logo}
+                              src={meta.logo}
                               alt={`${toolkit.name} logo`}
                               width={40}
                               height={40}
@@ -207,16 +222,16 @@ export default function IntegrationsPage() {
                             </Badge>
                           </div>
                           <CardDescription className="text-xs line-clamp-2 mt-1">
-                            {toolkit.meta.description}
+                            {meta.description}
                           </CardDescription>
                         </div>
                       </div>
                     </CardHeader>
                     <CardFooter className="pt-0 flex-col gap-2">
                       <div className="flex gap-4 text-xs text-muted-foreground w-full">
-                        <span>{toolkit.meta.tools_count} tools</span>
-                        {toolkit.meta.triggers_count > 0 && (
-                          <span>{toolkit.meta.triggers_count} triggers</span>
+                        <span>{meta.toolsCount} tools</span>
+                        {meta.triggersCount > 0 && (
+                          <span>{meta.triggersCount} triggers</span>
                         )}
                       </div>
                       <Button
