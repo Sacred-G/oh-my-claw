@@ -398,7 +398,8 @@ ${originalMessage}`
       
       // Try OpenAI fallback if Claude fails (any error)
       if (process.env.OPENAI_API_KEY) {
-        console.log(`[Fallback] Claude failed: ${error.message}. Retrying with OpenAI (${process.env.OPENAI_FALLBACK_MODEL || 'gpt-5.2'})...`)
+        const fallbackModel = this.openAIFallbackModel()
+        console.log(`[Fallback] Claude failed: ${error.message}. Retrying with OpenAI (${fallbackModel})...`)
         try {
           const fallbackResponse = await this.executeWithOpenAI(message, sessionKey, adapter, chatId)
           
@@ -471,6 +472,15 @@ ${originalMessage}`
     }
   }
 
+  openAIFallbackModel() {
+    return (
+      this.agent.providerConfigs?.openai?.model ||
+      process.env.OPENAI_FALLBACK_MODEL ||
+      process.env.OPENAI_MODEL ||
+      'gpt-5.5'
+    )
+  }
+
   /**
    * Execute with OpenAI as fallback - with full MCP Bridge tool access, vision, and streaming
    */
@@ -487,9 +497,10 @@ ${originalMessage}`
       sessionKey
     })
 
+    const fallbackModel = this.openAIFallbackModel()
     const provider = new OpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_FALLBACK_MODEL || 'gpt-4o'
+      model: fallbackModel
     })
 
     console.log(`[Fallback] OpenAI (${provider.defaultModel}) with ${bridge.tools.size} tools via MCP Bridge`)

@@ -27,14 +27,28 @@ export default class ClaudeAgent extends EventEmitter {
     // Provider setup
     this.workspace = config.workspace || process.cwd()
     this.providerName = config.provider || 'claude'
-    const providerConfig = {
+    const sharedProviderConfig = {
       allowedTools: config.allowedTools,
       maxTurns: config.maxTurns,
       permissionMode: config.permissionMode,
     }
-    if (this.providerName === 'opencode') {
-      Object.assign(providerConfig, config.opencode || {})
+
+    this.providerConfigs = {
+      claude: {
+        ...sharedProviderConfig,
+        ...(config.claude || {})
+      },
+      openai: {
+        ...sharedProviderConfig,
+        ...(config.openai || {})
+      },
+      opencode: {
+        ...sharedProviderConfig,
+        ...(config.opencode || {})
+      }
     }
+
+    const providerConfig = this.providerConfigs[this.providerName] || sharedProviderConfig
     this.provider = getProvider(this.providerName, providerConfig)
 
     this.allowedTools = config.allowedTools || [

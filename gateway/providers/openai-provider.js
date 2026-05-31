@@ -12,7 +12,7 @@ export class OpenAIProvider extends BaseProvider {
       apiKey: config.apiKey || process.env.OPENAI_API_KEY,
       baseURL: config.baseURL || process.env.OPENAI_BASE_URL
     });
-    this.defaultModel = config.model || process.env.OPENAI_MODEL || 'gpt-4o';
+    this.defaultModel = config.model || process.env.OPENAI_MODEL || 'gpt-5.5';
     this.abortControllers = new Map();
   }
 
@@ -22,6 +22,7 @@ export class OpenAIProvider extends BaseProvider {
 
   getAvailableModels() {
     return [
+      { id: 'gpt-5.5', label: 'GPT-5.5' },
       { id: 'gpt-4o', label: 'GPT-4o (Vision, High Intelligence)' },
       { id: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast, Cost-effective)' },
       { id: 'o1-preview', label: 'o1 Preview (Reasoning)' },

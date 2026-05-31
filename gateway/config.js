@@ -2,6 +2,10 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const parseList = (env) => env ? env.split(',').map(s => s.trim()).filter(Boolean) : []
+const parseProvider = (env, fallback = 'claude') => {
+  const provider = env?.trim().toLowerCase()
+  return ['claude', 'openai', 'opencode'].includes(provider) ? provider : fallback
+}
 
 // Resolve workspace to the project root (where this config file lives) so the
 // agent can access local resources like skills-main/, memory/, uploads/, etc.
@@ -60,7 +64,13 @@ export default {
     allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'TodoWrite', 'Skill', 'AskUserQuestion', 'read_pdf', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document', 'mcp__composio'],
     // Tools available to GUEST users — chat + their own Composio apps. No filesystem/shell.
     guestAllowedTools: ['TodoWrite', 'AskUserQuestion', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document', 'mcp__composio'],
-    provider: 'claude',          // 'claude' or 'opencode'
+    provider: parseProvider(process.env.OH_MY_CLAW_PROVIDER || process.env.AGENT_PROVIDER),
+    claude: {
+      model: process.env.CLAUDE_MODEL || 'opus-4.8'
+    },
+    openai: {
+      model: process.env.OPENAI_MODEL || 'gpt-5.5'
+    },
     opencode: {
       model: 'opencode/gpt-5-nano',
       hostname: '127.0.0.1',

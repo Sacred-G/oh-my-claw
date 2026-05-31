@@ -26,6 +26,8 @@ class Gateway {
       maxTurns: config.agent?.maxTurns || 50,
       provider: config.agent?.provider || 'claude',
       permissionMode: 'bypassPermissions',
+      claude: config.agent?.claude || {},
+      openai: config.agent?.openai || {},
       opencode: config.agent?.opencode || {}
     })
     this.commandHandler = new CommandHandler(this)

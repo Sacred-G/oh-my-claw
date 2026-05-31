@@ -429,7 +429,7 @@ export default class CommandHandler {
   }
 
   switchProvider(agent, providerName) {
-    const config = agent.provider.config || {}
+    const config = agent.providerConfigs?.[providerName] || agent.provider.config || {}
     const newProvider = getProvider(providerName, config)
     agent.provider = newProvider
     agent.providerName = providerName
