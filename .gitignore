@@ -40,8 +40,10 @@ gateway/skills-main/skills/pi-law-app-builder/
 gateway/test.cjs
 gateway/test_pdf*.js
 gateway/test_pdf*.ts
+gateway/screenshot*.png
 
 # Env
 .env
 .env.local
 .env.*.local
+!.env.example
