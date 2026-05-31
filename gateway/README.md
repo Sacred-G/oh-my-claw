@@ -91,7 +91,12 @@ Common gateway variables:
 | `COMPOSIO_API_KEY` | Composio tool router API key |
 | `OPENAI_API_KEY` | OpenAI provider and transcription helper key |
 | `OPENAI_BASE_URL` | Optional OpenAI-compatible endpoint |
-| `OPENAI_MODEL` | Optional OpenAI model override |
+| `OH_MY_CLAW_PROVIDER` | Runtime provider: `claude`, `openai`, or `opencode`. Defaults to `claude` |
+| `AGENT_PROVIDER` | Backward-compatible provider override if `OH_MY_CLAW_PROVIDER` is unset |
+| `CLAUDE_MODEL` | Claude model override. Defaults to `opus-4.8` |
+| `OPENAI_MODEL` | OpenAI model override. Defaults to `gpt-5.5` |
+| `OPENAI_FALLBACK_MODEL` | OpenAI model for Claude fallback. Defaults to `OPENAI_MODEL`/configured OpenAI model |
+| `OPENAI_IMAGE_MODEL` | OpenAI image generation model. Defaults to `gpt-image-1.5` |
 | `PORT` | Gateway HTTP port. Defaults to `4096` |
 | `WORKSPACE_DIR` | Override package workspace directory |
 | `OH_MY_CLAW_WORKSPACE` | Direct workspace override for memory manager callers |
@@ -118,15 +123,29 @@ Provider registration is in `providers/index.js`.
 
 | Provider | Config value | Notes |
 | --- | --- | --- |
-| Claude Agent SDK | `claude` | Default provider |
+| Claude Agent SDK | `claude` | Default provider. Default model: `opus-4.8` |
 | Opencode | `opencode` | Uses `agent.opencode` host, port, and model |
-| OpenAI | `openai` | Uses Chat Completions and `agent/mcp-bridge.js` |
+| OpenAI | `openai` | Uses Chat Completions and `agent/mcp-bridge.js`. Default model: `gpt-5.5` |
 
-Set the provider in `config.js`:
+Set the provider in `.env`:
+
+```bash
+OH_MY_CLAW_PROVIDER=claude
+CLAUDE_MODEL=opus-4.8
+OPENAI_MODEL=gpt-5.5
+```
+
+`config.js` keeps fallback defaults and Opencode settings:
 
 ```js
 agent: {
-  provider: 'claude',
+  provider: parseProvider(process.env.OH_MY_CLAW_PROVIDER || process.env.AGENT_PROVIDER),
+  claude: {
+    model: process.env.CLAUDE_MODEL || 'opus-4.8'
+  },
+  openai: {
+    model: process.env.OPENAI_MODEL || 'gpt-5.5'
+  },
   maxTurns: 100,
   opencode: {
     model: 'opencode/gpt-5-nano',

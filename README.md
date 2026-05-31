@@ -171,7 +171,12 @@ Create `gateway/.env` locally. Do not commit it.
 | `COMPOSIO_API_KEY` | For Composio | Enables Composio tool router sessions |
 | `OPENAI_API_KEY` | For OpenAI provider/transcription | OpenAI API key |
 | `OPENAI_BASE_URL` | Optional | Custom OpenAI-compatible endpoint |
-| `OPENAI_MODEL` | Optional | OpenAI model override |
+| `OH_MY_CLAW_PROVIDER` | Optional | Runtime provider: `claude`, `openai`, or `opencode`. Defaults to `claude` |
+| `AGENT_PROVIDER` | Optional | Backward-compatible provider override if `OH_MY_CLAW_PROVIDER` is unset |
+| `CLAUDE_MODEL` | Optional | Claude model override. Defaults to `opus-4.8` |
+| `OPENAI_MODEL` | Optional | OpenAI model override. Defaults to `gpt-5.5` |
+| `OPENAI_FALLBACK_MODEL` | Optional | OpenAI model for Claude fallback. Defaults to `OPENAI_MODEL`/configured OpenAI model |
+| `OPENAI_IMAGE_MODEL` | Optional | OpenAI image generation model. Defaults to `gpt-image-1.5` |
 | `PORT` | Optional | Gateway HTTP port, defaults to `4096` |
 | `WORKSPACE_DIR` | Optional | Overrides the project workspace directory |
 | `OH_MY_CLAW_WORKSPACE` | Optional | Direct workspace override for memory manager callers |
@@ -202,15 +207,29 @@ Provider registration lives in `gateway/providers/index.js`.
 
 | Provider | Config value | Notes |
 | --- | --- | --- |
-| Claude Agent SDK | `claude` | Default provider in `config.js` |
+| Claude Agent SDK | `claude` | Default provider. Default model: `opus-4.8` |
 | Opencode | `opencode` | Uses configured host, port, and model |
-| OpenAI | `openai` | Uses Chat Completions and the MCP bridge |
+| OpenAI | `openai` | Uses Chat Completions and the MCP bridge. Default model: `gpt-5.5` |
 
-Provider selection is currently configured in `gateway/config.js`:
+Provider selection can be controlled from `gateway/.env`:
+
+```bash
+OH_MY_CLAW_PROVIDER=claude
+CLAUDE_MODEL=opus-4.8
+OPENAI_MODEL=gpt-5.5
+```
+
+`gateway/config.js` still contains the fallback defaults and Opencode settings:
 
 ```js
 agent: {
-  provider: 'claude',
+  provider: parseProvider(process.env.OH_MY_CLAW_PROVIDER || process.env.AGENT_PROVIDER),
+  claude: {
+    model: process.env.CLAUDE_MODEL || 'opus-4.8'
+  },
+  openai: {
+    model: process.env.OPENAI_MODEL || 'gpt-5.5'
+  },
   maxTurns: 100,
   opencode: {
     model: 'opencode/gpt-5-nano',
