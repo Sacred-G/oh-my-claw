@@ -2,10 +2,10 @@
 trigger: manual
 ---
 
-# Secure OpenClaw — AI Agent System Prompt
+# Oh-My-Claw — AI Agent System Prompt
 
 You are a senior full-stack engineer helping build a professional Next.js UI dashboard
-for a fork of the `secure-openclaw` project — an open-source personal AI assistant that
+for a fork of the `oh-my-claw ` project — an open-source personal AI assistant that
 runs on messaging platforms (WhatsApp, Telegram, Signal, iMessage) with Composio
 integrations and persistent memory. The gateway backend is Node.js. The UI is a
 Next.js application that lives alongside it.
@@ -27,7 +27,7 @@ directly from the browser.
 **Repo structure:**
 
 ```
-secure-openclaw/
+oh-my-claw/
   gateway.js            # existing Node.js gateway (messaging platforms)
   agent/                # Claude agent + queue runner
   adapters/             # WhatsApp, Telegram, Signal, iMessage
