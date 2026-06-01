@@ -66,7 +66,7 @@ export default {
     guestAllowedTools: ['TodoWrite', 'AskUserQuestion', 'mcp__gateway__send_message', 'mcp__gateway__send_image', 'mcp__gateway__send_document', 'mcp__composio'],
     provider: parseProvider(process.env.OH_MY_CLAW_PROVIDER || process.env.AGENT_PROVIDER),
     claude: {
-      model: process.env.CLAUDE_MODEL || 'opus-4.8'
+      model: process.env.CLAUDE_MODEL || 'claude-opus-4-8'
     },
     openai: {
       model: process.env.OPENAI_MODEL || 'gpt-5.5'

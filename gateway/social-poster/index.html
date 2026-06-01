@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crosspost — Post to X, LinkedIn & Facebook</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#121826; --panel2:#0e1422; --line:#1f2937;
+    --text:#e6edf6; --muted:#8b97a9; --accent:#6366f1; --accent2:#22d3ee;
+    --x:#1d9bf0; --li:#0a66c2; --fb:#1877f2; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+    --radius:16px; --shadow:0 10px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 700px at 80% -10%,rgba(99,102,241,.15),transparent 60%),
+               radial-gradient(900px 600px at -10% 110%,rgba(34,211,238,.12),transparent 55%),
+               var(--bg);
+    color:var(--text); min-height:100vh;
+  }
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 26px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;backdrop-filter:blur(10px);background:rgba(11,15,23,.7);z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:18px;letter-spacing:.2px}
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+        display:grid;place-items:center;color:#fff;font-weight:800;box-shadow:0 6px 18px rgba(99,102,241,.5)}
+  .brand small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+  .header-actions{display:flex;gap:10px;align-items:center}
+  .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+
+  .wrap{max-width:1180px;margin:26px auto;padding:0 22px;display:grid;grid-template-columns:1.05fr .95fr;gap:22px}
+  @media(max-width:960px){.wrap{grid-template-columns:1fr}}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+        border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card .pad{padding:20px}
+  h2{margin:0 0 4px;font-size:16px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+
+  .platforms{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .ptoggle{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#0c1220;
+    padding:9px 13px;border-radius:12px;cursor:pointer;user-select:none;transition:.18s;font-size:13px;font-weight:600}
+  .ptoggle .dot{width:10px;height:10px;border-radius:50%}
+  .ptoggle.x .dot{background:var(--x)} .ptoggle.li .dot{background:var(--li)} .ptoggle.fb .dot{background:var(--fb)}
+  .ptoggle.off{opacity:.4;filter:grayscale(.6)}
+  .ptoggle.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 6px 16px rgba(99,102,241,.18)}
+
+  textarea{width:100%;min-height:150px;resize:vertical;background:#0a0f1a;color:var(--text);
+    border:1px solid var(--line);border-radius:12px;padding:14px;font-size:15px;line-height:1.5;outline:none}
+  textarea:focus{border-color:var(--accent)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+  .counts{display:flex;gap:8px;flex-wrap:wrap}
+  .count{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 10px}
+  .count b{color:var(--text)} .count.over b{color:var(--err)}
+  .tools{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:#0c1220;color:var(--text);padding:9px 13px;border-radius:10px;
+    cursor:pointer;font-size:13px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),#7c3aed);border:none;padding:12px 20px;font-size:14px;
+    box-shadow:0 8px 22px rgba(99,102,241,.35)}
+  .btn.primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+  .btn.ghost{background:transparent}
+
+  .uploader{margin-top:14px;border:1px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--muted);
+    font-size:13px;cursor:pointer;transition:.15s}
+  .uploader:hover{border-color:var(--accent);color:var(--text)}
+  .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .thumb{position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;
+    background:rgba(0,0,0,.65);color:#fff;cursor:pointer;font-size:13px;line-height:1}
+
+  .opts{margin-top:16px;display:grid;gap:10px}
+  .opt{display:flex;align-items:center;justify-content:space-between;background:#0a0f1a;border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;font-size:13px}
+  input[type=datetime-local]{background:#0c1220;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px}
+  .switch{position:relative;width:42px;height:24px}
+  .switch input{display:none}
+  .slider{position:absolute;inset:0;background:#1f2937;border-radius:999px;cursor:pointer;transition:.2s}
+  .slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--accent)}
+  .switch input:checked + .slider:before{transform:translateX(18px)}
+
+  .custom-block{display:none;margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+  .custom-block.show{display:block}
+  .custom-tab{display:flex;gap:8px;margin-bottom:10px}
+  .ctab{font-size:12px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:#0c1220;cursor:pointer}
+  .ctab.active{border-color:var(--accent);color:#fff}
+
+  /* Preview */
+  .preview-tabs{display:flex;gap:8px;margin-bottom:14px}
+  .ptab{flex:1;text-align:center;font-size:13px;font-weight:600;padding:9px;border-radius:10px;border:1px solid var(--line);
+    background:#0c1220;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  .ptab.active{border-color:var(--accent);background:#10162a}
+  .ptab .dot{width:9px;height:9px;border-radius:50%}
+  .ptab.x .dot{background:var(--x)} .ptab.li .dot{background:var(--li)} .ptab.fb .dot{background:var(--fb)}
+
+  .mock{background:#fff;color:#0f1419;border-radius:14px;overflow:hidden}
+  .mock .m-head{display:flex;gap:10px;padding:14px 14px 0}
+  .avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#22d3ee);flex:none;
+    display:grid;place-items:center;color:#fff;font-weight:800}
+  .m-name{font-weight:700;font-size:15px}
+  .m-handle{color:#536471;font-size:13px}
+  .m-body{padding:10px 14px 14px;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  .m-imgs{display:grid;gap:3px;padding:0 14px 12px}
+  .m-imgs.g1{grid-template-columns:1fr}
+  .m-imgs.g2{grid-template-columns:1fr 1fr}
+  .m-imgs.g3,.m-imgs.g4{grid-template-columns:1fr 1fr}
+  .m-imgs img{width:100%;height:160px;object-fit:cover;border-radius:10px}
+  .m-foot{display:flex;justify-content:space-between;color:#536471;font-size:13px;padding:10px 18px;border-top:1px solid #eee}
+  .mock.li{border:1px solid #e0e0e0}
+  .mock.li .m-name{font-size:14px}
+  .mock.li .m-sub{color:#666;font-size:12px}
+  .mock.fb .m-sub{color:#65676b;font-size:12px}
+  .empty-prev{color:#8b97a9;font-size:13px;text-align:center;padding:40px 10px}
+
+  /* Toasts + result */
+  .results{margin-top:14px;display:grid;gap:8px}
+  .res{display:flex;align-items:center;gap:10px;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#0a0f1a}
+  .res .dot{width:9px;height:9px;border-radius:50%}
+  .res.ok .dot{background:var(--ok)} .res.err .dot{background:var(--err)} .res.pending .dot{background:var(--warn)}
+  .res .grow{flex:1}
+  .res a{color:var(--accent2);text-decoration:none;font-size:12px}
+  .spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5;border-top:1px solid var(--line);padding-top:12px}
+  .toast-wrap{position:fixed;bottom:22px;right:22px;display:grid;gap:10px;z-index:50}
+  .toast{background:#10162a;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;
+    padding:12px 16px;font-size:13px;box-shadow:var(--shadow);animation:slide .25s ease}
+  @keyframes slide{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo">⚡</div>
+    <div>Crosspost<small>Compose once. Post everywhere.</small></div>
+  </div>
+  <div class="header-actions">
+    <span class="pill" id="demoPill">Demo mode</span>
+    <button class="btn ghost" id="profileBtn">@yourbrand</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- COMPOSER -->
+  <section class="card">
+    <div class="pad">
+      <h2>Composer</h2>
+      <p class="sub">Pick your channels, write your post, add media, then publish to all of them at once.</p>
+
+      <div class="platforms" id="platforms">
+        <div class="ptoggle x on" data-p="x"><span class="dot"></span> X / Twitter</div>
+        <div class="ptoggle li on" data-p="li"><span class="dot"></span> LinkedIn</div>
+        <div class="ptoggle fb on" data-p="fb"><span class="dot"></span> Facebook</div>
+      </div>
+
+      <textarea id="mainText" placeholder="What do you want to share today?"></textarea>
+
+      <div class="row">
+        <div class="counts" id="counts"></div>
+        <div class="tools">
+          <button class="btn" data-emoji="🚀">🚀</button>
+          <button class="btn" data-emoji="🎉">🎉</button>
+          <button class="btn" data-emoji="🔥">🔥</button>
+          <button class="btn" id="hashBtn">＃ Hashtags</button>
+        </div>
+      </div>
+
+      <div class="uploader" id="uploader">📎 Click to add images (or drag & drop)</div>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none" />
+      <div class="thumbs" id="thumbs"></div>
+
+      <div class="opts">
+        <div class="opt">
+          <div>🎯 Customize text per platform</div>
+          <label class="switch"><input type="checkbox" id="customizeToggle"><span class="slider"></span></label>
+        </div>
+        <div class="custom-block" id="customBlock">
+          <div class="custom-tab" id="customTabs">
+            <div class="ctab active" data-c="x">X</div>
+            <div class="ctab" data-c="li">LinkedIn</div>
+            <div class="ctab" data-c="fb">Facebook</div>
+          </div>
+          <textarea id="customText" placeholder="Leave blank to use the shared message…" style="min-height:90px"></textarea>
+        </div>
+
+        <div class="opt">
+          <div>🕒 Schedule for later</div>
+          <label class="switch"><input type="checkbox" id="scheduleToggle"><span class="slider"></span></label>
+        </div>
+        <div class="opt" id="scheduleRow" style="display:none">
+          <div>Publish at</div>
+          <input type="datetime-local" id="scheduleAt" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <button class="btn ghost" id="clearBtn">Clear</button>
+        <button class="btn primary" id="publishBtn">Publish now →</button>
+      </div>
+
+      <div class="results" id="results"></div>
+
+      <p class="note" id="note">
+        Demo mode simulates posting so you can see the full flow. To post for real, connect each platform's
+        official API (X API v2, LinkedIn Marketing/Share API, Meta Graph API) with OAuth — the backend hooks are
+        marked in the code.
+      </p>
+    </div>
+  </section>
+
+  <!-- PREVIEW -->
+  <section class="card">
+    <div class="pad">
+      <h2>Live preview</h2>
+      <p class="sub">See exactly how your post looks on each platform.</p>
+      <div class="preview-tabs" id="previewTabs">
+        <div class="ptab x active" data-p="x"><span class="dot"></span> X</div>
+        <div class="ptab li" data-p="li"><span class="dot"></span> LinkedIn</div>
+        <div class="ptab fb" data-p="fb"><span class="dot"></span> Facebook</div>
+      </div>
+      <div id="previewArea"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const LIMITS = { x:280, li:3000, fb:63206 };
+const NAMES  = { x:"X / Twitter", li:"LinkedIn", fb:"Facebook" };
+const PROFILE = { name:"Your Brand", handle:"@yourbrand", initials:"YB" };
+
+const state = {
+  active: { x:true, li:true, fb:true },
+  images: [],            // {id,url}
+  customize:false,
+  custom: { x:"", li:"", fb:"" },
+  customTab:"x",
+  previewTab:"x",
+  schedule:false
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function textFor(p){
+  if(state.customize && state.custom[p].trim()) return state.custom[p];
+  return $("#mainText").value;
+}
+function activeList(){ return Object.keys(state.active).filter(p=>state.active[p]); }
+
+/* ---- platform toggles ---- */
+$$("#platforms .ptoggle").forEach(el=>{
+  el.addEventListener("click",()=>{
+    const p = el.dataset.p;
+    state.active[p] = !state.active[p];
+    el.classList.toggle("on",state.active[p]);
+    el.classList.toggle("off",!state.active[p]);
+    renderCounts(); renderPreview(); updatePublishBtn();
+  });
+});
+
+/* ---- counts ---- */
+function renderCounts(){
+  const box = $("#counts"); box.innerHTML="";
+  activeList().forEach(p=>{
+    const len = textFor(p).length;
+    const over = len > LIMITS[p];
+    const c = document.createElement("div");
+    c.className = "count" + (over?" over":"");
+    c.innerHTML = `${NAMES[p].split(" ")[0]} <b>${len}/${LIMITS[p]}</b>`;
+    box.appendChild(c);
+  });
+}
+
+/* ---- emoji + hashtags ---- */
+$$("[data-emoji]").forEach(b=> b.addEventListener("click",()=>insertText(b.dataset.emoji)));
+$("#hashBtn").addEventListener("click",()=>insertText("\n\n#marketing #socialmedia #growth"));
+function insertText(t){
+  const ta = $("#mainText"); ta.value += t; ta.focus();
+  renderCounts(); renderPreview();
+}
+
+/* ---- main text ---- */
+$("#mainText").addEventListener("input",()=>{ renderCounts(); renderPreview(); updatePublishBtn(); });
+
+/* ---- customize ---- */
+$("#customizeToggle").addEventListener("change",e=>{
+  state.customize = e.target.checked;
+  $("#customBlock").classList.toggle("show",state.customize);
+  renderCounts(); renderPreview();
+});
+$$("#customTabs .ctab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    $$("#customTabs .ctab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    state.customTab = t.dataset.c;
+    $("#customText").value = state.custom[state.customTab];
+    $("#customText").placeholder = `Custom message for ${NAMES[state.customTab]} (blank = shared)…`;
+  });
+});
+$("#customText").addEventListener("input",e=>{
+  state.custom[state.customTab] = e.target.value;
+  renderCounts(); renderPreview();
+});
+
+/* ---- schedule ---- */
+$("#scheduleToggle").addEventListener("change",e=>{
+  state.schedule = e.target.checked;
+  $("#scheduleRow").style.display = state.schedule ? "flex":"none";
+  $("#publishBtn").textContent = state.schedule ? "Schedule post →" : "Publish now →";
+});
+
+/* ---- images ---- */
+$("#uploader").addEventListener("click",()=>$("#fileInput").click());
+$("#fileInput").addEventListener("change",e=>addFiles(e.target.files));
+const up = $("#uploader");
+;["dragover","dragenter"].forEach(ev=>up.addEventListener(ev,e=>{e.preventDefault();up.style.borderColor="#6366f1"}));
+;["dragleave","drop"].forEach(ev=>up.addEventListener(ev,e=>{e.preventDefault();up.style.borderColor=""}));
+up.addEventListener("drop",e=>addFiles(e.dataTransfer.files));
+function addFiles(files){
+  [...files].slice(0,4-state.images.length).forEach(f=>{
+    if(!f.type.startsWith("image/"))return;
+    const url = URL.createObjectURL(f);
+    state.images.push({id:Date.now()+Math.random(),url});
+  });
+  renderThumbs(); renderPreview();
+}
+function renderThumbs(){
+  const box = $("#thumbs"); box.innerHTML="";
+  state.images.forEach(img=>{
+    const d = document.createElement("div"); d.className="thumb";
+    d.innerHTML = `<img src="${img.url}"><button data-id="${img.id}">×</button>`;
+    box.appendChild(d);
+  });
+  $$("#thumbs button").forEach(b=>b.addEventListener("click",()=>{
+    state.images = state.images.filter(i=>i.id!=b.dataset.id);
+    renderThumbs(); renderPreview();
+  }));
+}
+
+/* ---- preview ---- */
+$$("#previewTabs .ptab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    $$("#previewTabs .ptab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active"); state.previewTab=t.dataset.p; renderPreview();
+  });
+});
+function imgGrid(){
+  if(!state.images.length) return "";
+  const g = "g"+Math.min(state.images.length,4);
+  return `<div class="m-imgs ${g}">${state.images.map(i=>`<img src="${i.url}">`).join("")}</div>`;
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function renderPreview(){
+  const p = state.previewTab;
+  const area = $("#previewArea");
+  const txt = textFor(p).trim();
+  if(!state.active[p]){
+    area.innerHTML = `<div class="empty-prev">${NAMES[p]} is turned off. Enable it in the composer to preview.</div>`;
+    return;
+  }
+  const body = txt ? escapeHtml(txt) : '<span style="color:#aaa">Your post preview will appear here…</span>';
+  if(p==="x"){
+    area.innerHTML = `<div class="mock x">
+      <div class="m-head"><div class="avatar">${PROFILE.initials}</div>
+        <div><div class="m-name">${PROFILE.name}</div><div class="m-handle">${PROFILE.handle} · now</div></div></div>
+      <div class="m-body">${body}</div>${imgGrid()}
+      <div class="m-foot"><span>💬 12</span><span>🔁 34</span><span>❤️ 208</span><span>📊 4.2K</span></div></div>`;
+  } else if(p==="li"){
+    area.innerHTML = `<div class="mock li">
+      <div class="m-head"><div class="avatar">${PROFILE.initials}</div>
+        <div><div class="m-name">${PROFILE.name}</div><div class="m-sub">1,204 followers · now</div></div></div>
+      <div class="m-body">${body}</div>${imgGrid()}
+      <div class="m-foot"><span>👍 Like</span><span>💬 Comment</span><span>↗ Repost</span><span>✉ Send</span></div></div>`;
+  } else {
+    area.innerHTML = `<div class="mock fb">
+      <div class="m-head"><div class="avatar">${PROFILE.initials}</div>
+        <div><div class="m-name">${PROFILE.name}</div><div class="m-sub">Just now · 🌎</div></div></div>
+      <div class="m-body">${body}</div>${imgGrid()}
+      <div class="m-foot"><span>👍 Like</span><span>💬 Comment</span><span>↗ Share</span></div></div>`;
+  }
+}
+
+/* ---- publish ---- */
+function updatePublishBtn(){
+  const any = activeList().length>0;
+  const hasText = $("#mainText").value.trim() || Object.values(state.custom).some(v=>v.trim());
+  $("#publishBtn").disabled = !(any && hasText);
+}
+$("#publishBtn").addEventListener("click",publish);
+async function publish(){
+  const targets = activeList();
+  // validate limits
+  const over = targets.filter(p=>textFor(p).length>LIMITS[p]);
+  if(over.length){ toast(`⚠️ Too long for ${over.map(p=>NAMES[p]).join(", ")}`); return; }
+
+  const results = $("#results"); results.innerHTML="";
+  const map = {};
+  targets.forEach(p=>{
+    const el = document.createElement("div");
+    el.className="res pending";
+    el.innerHTML=`<span class="dot"></span><div class="grow">${NAMES[p]}</div><div class="spin"></div>`;
+    results.appendChild(el); map[p]=el;
+  });
+  $("#publishBtn").disabled=true;
+
+  for(const p of targets){
+    await wait(700+Math.random()*900);
+    // ---- BACKEND HOOK: replace simulate() with real API call per platform ----
+    const res = await simulatePost(p);
+    const el = map[p];
+    if(res.ok){
+      el.className="res ok";
+      const verb = state.schedule ? "Scheduled" : "Posted";
+      el.innerHTML=`<span class="dot"></span><div class="grow">${NAMES[p]} — ${verb} ✓</div><a href="${res.url}" target="_blank">View</a>`;
+    } else {
+      el.className="res err";
+      el.innerHTML=`<span class="dot"></span><div class="grow">${NAMES[p]} — ${res.error}</div>`;
+    }
+  }
+  const verb = state.schedule ? "scheduled" : "published";
+  toast(`✅ ${verb.charAt(0).toUpperCase()+verb.slice(1)} to ${targets.length} platform${targets.length>1?"s":""}`);
+  $("#publishBtn").disabled=false;
+}
+
+/* Simulated backend. Swap this for real fetch() calls to your server. */
+function simulatePost(p){
+  return new Promise(res=>{
+    const ok = Math.random()>0.07; // small chance of failure to show error UX
+    res(ok
+      ? {ok:true, url:`https://${p==="x"?"x.com":p==="li"?"linkedin.com":"facebook.com"}/${PROFILE.handle.replace("@","")}/posts/demo`}
+      : {ok:false, error:"Auth token expired — reconnect"});
+  });
+}
+
+/* ---- helpers ---- */
+function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+function toast(msg){
+  const t = document.createElement("div"); t.className="toast"; t.textContent=msg;
+  $("#toasts").appendChild(t); setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.remove(),300)},3200);
+}
+$("#clearBtn").addEventListener("click",()=>{
+  $("#mainText").value=""; state.images=[]; state.custom={x:"",li:"",fb:""}; $("#customText").value="";
+  renderThumbs(); renderCounts(); renderPreview(); updatePublishBtn(); $("#results").innerHTML="";
+});
+$("#profileBtn").addEventListener("click",()=>{
+  const name = prompt("Display name:", PROFILE.name); if(name)PROFILE.name=name;
+  const handle = prompt("Handle:", PROFILE.handle); if(handle)PROFILE.handle=handle.startsWith("@")?handle:"@"+handle;
+  PROFILE.initials = PROFILE.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  $("#profileBtn").textContent=PROFILE.handle; renderPreview();
+});
+
+/* init */
+renderCounts(); renderPreview(); updatePublishBtn();
+</script>
+</body>
+</html>

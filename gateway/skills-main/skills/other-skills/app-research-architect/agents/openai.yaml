@@ -1,0 +1,3 @@
+display_name: App Research Architect
+short_description: Research modern app ideas, GitHub repos, UI inspiration, tools, and architecture before building.
+default_prompt: Research and architect a professional modern app for my idea, including GitHub repo inspiration, competitor UI screenshots, library choices, MCP tools, memory/database design, and implementation handoff for Codex/Windsurf/VSCode.
